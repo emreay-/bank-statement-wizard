@@ -2,6 +2,7 @@ from collections import namedtuple, OrderedDict
 from typing import List, Dict, Callable, Optional, Tuple
 import csv
 import ast
+import json
 
 
 def create_named_tuple_with_name_and_fields(name: str, fields: List[str]):
@@ -9,6 +10,12 @@ def create_named_tuple_with_name_and_fields(name: str, fields: List[str]):
     new_tuple_type.__new__.__defaults__ = (
         None, ) * len(new_tuple_type._fields)
     return new_tuple_type
+
+
+def load_json_file(path_to_json: str):
+    with open(path_to_json, 'r') as handle:
+        data = json.load(handle)
+        return data
 
 
 def parse_csv_to_list(
