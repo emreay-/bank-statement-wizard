@@ -1,0 +1,2 @@
+export BANK_STATEMENT_WIZARD_PROJ_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export PYTHONPATH=${PYTHONPATH}:${BANK_STATEMENT_WIZARD_PROJ_DIR}
