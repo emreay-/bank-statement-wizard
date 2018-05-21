@@ -50,13 +50,13 @@ class CsvParser:
         )
 
 
-def convert_to_literal(data: List[str]) -> List:
+def convert_fields(data: List[str]) -> List:
     converted = []
     for i in data:
         try:
             converted.append(ast.literal_eval(i))
         except Exception:
-            converted.append(i)
+            converted.append(i.lower())
     return converted
 
 
@@ -71,7 +71,7 @@ def create_new_entry_type_and_csv_parser(
 
     def _converter(csv_line: OrderedDict):
         return new_entry_type(
-            *convert_to_literal(
+            *convert_fields(
                 data=[value for key, value in csv_line.items()
                       ][:len(csv_fields)],
             )
@@ -80,3 +80,23 @@ def create_new_entry_type_and_csv_parser(
     csv_parser = CsvParser(fields=csv_fields, converter=_converter)
 
     return new_entry_type, csv_parser
+
+
+Transaction = create_named_tuple_with_name_and_fields(
+    name='Transaction',
+    fields=['date', 'amount', 'description', 'other']
+)
+
+
+class StatementEntryToTransactionConverter:
+
+    def __init__(self, matching_entry_fields_in_order: List[str]):
+        self._matching_entry_fields_in_order = matching_entry_fields_in_order
+
+    def __call__(self, statement_entry) -> Transaction:
+        return Transaction(
+            *[getattr(statement_entry, i) for i in self._matching_entry_fields_in_order]
+        )
+
+    def process_bulk(self, statement_entries: List) -> List[Transaction]:
+        return [self(i) for i in statement_entries]
