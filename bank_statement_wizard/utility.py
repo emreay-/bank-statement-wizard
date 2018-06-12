@@ -98,7 +98,7 @@ class Transaction:
         credit_amount: Optional[float] = None,
         description: Optional[str] = None,
         other: Optional[Any] = None,
-        transaction_class: Optional[str] = None
+        transaction_category: Optional[str] = None
     ):
         self.date = date
         self.debit_amount = abs(debit_amount) if debit_amount != None else None
@@ -106,7 +106,20 @@ class Transaction:
             credit_amount) if credit_amount != None else None
         self.description = description
         self.other = other
-        self.transaction_class = transaction_class
+        self.transaction_category = transaction_category
+
+    def __str__(self):
+        return '''Date                  : {}
+Debit Amount          : {}
+Credit Amount         : {}
+Desc                  : {}
+Other                 : {}
+Transaction Category  : {}\n'''.format(self.date,
+                                       self.debit_amount,
+                                       self.credit_amount,
+                                       self.description,
+                                       self.other,
+                                       self.transaction_category)
 
 
 class StatementEntryToTransactionConverter:
@@ -116,7 +129,8 @@ class StatementEntryToTransactionConverter:
 
     def __call__(self, statement_entry) -> Transaction:
         return Transaction(
-            *[getattr(statement_entry, i) if i != '' else None
+            *[getattr(statement_entry, i) if
+              (i != '' != getattr(statement_entry, i)) else None
               for i in self._matching_entry_fields_in_order]
         )
 
