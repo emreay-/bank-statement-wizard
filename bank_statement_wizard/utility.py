@@ -1,5 +1,5 @@
 from collections import namedtuple, OrderedDict
-from typing import List, Dict, Callable, Optional, Tuple
+from typing import List, Dict, Callable, Optional, Tuple, Any
 import csv
 import ast
 import json
@@ -89,10 +89,24 @@ def create_new_entry_type_and_csv_parser(
     return new_entry_type, csv_parser
 
 
-Transaction = create_named_tuple_with_name_and_fields(
-    name='Transaction',
-    fields=['date', 'amount', 'description', 'other', 'transaction_class']
-)
+class Transaction:
+
+    def __init__(
+        self,
+        date: Optional[str] = None,
+        debit_amount: Optional[float] = None,
+        credit_amount: Optional[float] = None,
+        description: Optional[str] = None,
+        other: Optional[Any] = None,
+        transaction_class: Optional[str] = None
+    ):
+        self.date = date
+        self.debit_amount = abs(debit_amount) if debit_amount != None else None
+        self.credit_amount = abs(
+            credit_amount) if credit_amount != None else None
+        self.description = description
+        self.other = other
+        self.transaction_class = transaction_class
 
 
 class StatementEntryToTransactionConverter:
@@ -102,7 +116,8 @@ class StatementEntryToTransactionConverter:
 
     def __call__(self, statement_entry) -> Transaction:
         return Transaction(
-            *[getattr(statement_entry, i) for i in self._matching_entry_fields_in_order]
+            *[getattr(statement_entry, i) if i != '' else None
+              for i in self._matching_entry_fields_in_order]
         )
 
     def process_bulk(self, statement_entries: List) -> List[Transaction]:
