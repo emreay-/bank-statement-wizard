@@ -1,4 +1,5 @@
-from .utility import create_new_entry_type_and_csv_parser, StatementEntryToTransactionConverter
+from .utility import create_new_entry_type_and_csv_parser, create_named_tuple_with_name_and_fields, \
+    StatementEntryToTransactionConverter
 
 
 lloyds_account_statement_fields = ['transaction_date', 'transaction_type', 'sort_code',
@@ -33,3 +34,11 @@ LloydsCreditCardStatementEntry, LloydsCreditCardStatementParser = \
 LloydsCreditCardStatementEntryToTranscation = StatementEntryToTransactionConverter(
     ['date', 'amount', '', 'description', 'reference']
 )
+
+StatementBundle = create_named_tuple_with_name_and_fields(
+    'StatementBundle', ['parser', 'converter'])
+
+accepted_statements = {
+    'lloyds-debit': StatementBundle(LloydsAccountStatementParser, LloydsAccountsStatementEntryToTransaction),
+    'lloyds-credit': StatementBundle(LloydsCreditCardStatementParser, LloydsCreditCardStatementEntryToTranscation)
+}
