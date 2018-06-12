@@ -91,7 +91,7 @@ def create_new_entry_type_and_csv_parser(
 
 Transaction = create_named_tuple_with_name_and_fields(
     name='Transaction',
-    fields=['date', 'amount', 'description', 'other']
+    fields=['date', 'amount', 'description', 'other', 'transaction_class']
 )
 
 
