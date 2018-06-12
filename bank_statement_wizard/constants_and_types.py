@@ -18,7 +18,7 @@ LloydsAccountStatementEntry, LloydsAccountStatementParser = \
 
 
 LloydsAccountsStatementEntryToTransaction = StatementEntryToTransactionConverter(
-    ['transaction_date', 'debit_amount',
+    ['transaction_date', 'debit_amount', 'credit_amount',
         'transaction_description', 'transaction_type']
 )
 
@@ -31,5 +31,5 @@ LloydsCreditCardStatementEntry, LloydsCreditCardStatementParser = \
 
 
 LloydsCreditCardStatementEntryToTranscation = StatementEntryToTransactionConverter(
-    ['date', 'amount', 'description', 'reference']
+    ['date', 'amount', '', 'description', 'reference']
 )
