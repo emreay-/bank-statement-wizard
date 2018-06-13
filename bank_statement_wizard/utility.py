@@ -101,12 +101,20 @@ class Transaction:
         transaction_category: Optional[str] = None
     ):
         self.date = date
-        self.debit_amount = abs(debit_amount) if debit_amount != None else None
+        self.debit_amount = abs(
+            float(debit_amount)) if debit_amount != None else None
         self.credit_amount = abs(
-            credit_amount) if credit_amount != None else None
+            float(credit_amount)) if credit_amount != None else None
         self.description = description
         self.other = other
         self.transaction_category = transaction_category
+
+    @property
+    def amount(self):
+        if self.debit_amount != None and self.credit_amount == None:
+            return (-1.0) * self.debit_amount
+        elif self.debit_amount == None and self.credit_amount != None:
+            return self.credit_amount
 
     def __str__(self):
         return '''Date                  : {}
