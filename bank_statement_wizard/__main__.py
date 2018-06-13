@@ -36,9 +36,7 @@ def process_statement(
     matcher.process_bulk(transactions)
 
     ledger = Ledger().run(transactions)
-    print(ledger)
-    print('')
-    [print(i) for i in ledger.get_transactions_with_category('None')]
+    print('\n{}\n\n'.format(ledger))
 
 
 process_statement(*parse_arguments())
