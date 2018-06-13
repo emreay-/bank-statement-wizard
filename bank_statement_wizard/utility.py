@@ -138,7 +138,7 @@ class StatementEntryToTransactionConverter:
     def __call__(self, statement_entry) -> Transaction:
         return Transaction(
             *[getattr(statement_entry, i) if
-              (i != '' != getattr(statement_entry, i)) else None
+              (i != '' and '' != getattr(statement_entry, i)) else None
               for i in self._matching_entry_fields_in_order]
         )
 
