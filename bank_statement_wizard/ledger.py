@@ -57,13 +57,13 @@ class Ledger:
             transactions += self.categorized_debit_transactions[category]
         return transactions
 
-    def generate_report(self) -> 'Ledger':
-        pass
-
     def __str__(self):
-        return '''Debit Balance   : {}
-Credit Balance  : {}
+        return '''Credit Balance   : {:.2f}
+Debit Balance    : {:.2f}
 --------------  
-Balance         : {}'''.format(self.debit_balance,
-                               self.credit_balance,
-                               self.balance)
+Balance          : {:.2f}'''.format(self.credit_balance,
+                                    self.debit_balance,
+                                    self.balance)
+
+    def __iter__(self):
+        return iter(self.debit_transactions + self.credit_transactions)
