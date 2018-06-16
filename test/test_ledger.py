@@ -51,10 +51,10 @@ class LedgerTests(UnitTestBase):
             expected_balance, self.__ledger.balance, places=3)
 
     def test_str(self):
-        expected_str = '''Debit Balance   : 1690.0
-Credit Balance  : 2537.0
+        expected_str = '''Credit Balance   : 2537.00
+Debit Balance    : 1690.00
 --------------  
-Balance         : 847.0'''
+Balance          : 847.00'''
         self.__ledger.run(self.__transactions)
         self.assertEqual(expected_str, str(self.__ledger))
 
