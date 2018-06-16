@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 
 from .utility import Transaction
 
@@ -58,6 +58,17 @@ class Ledger:
         if category in self.categorized_debit_transactions:
             transactions += self.categorized_debit_transactions[category]
         return transactions
+
+    def get_expense_stats(self) -> Optional[Dict[str, Tuple[float, float]]]:
+        if self.debit_balance > 0.0:
+            _stats = {}
+            for category, transactions in self.categorized_debit_transactions.items():
+                _total = sum([i.debit_amount for i in transactions])
+                _percentage = _total/self.debit_balance
+                _stats[category] = (_total, _percentage)
+            assert sum([i[1] for i in _stats.values()]) - 1.0 < 1e-3
+            return _stats
+        return
 
     def __str__(self):
         return '''Credit Balance   : {:.2f}
