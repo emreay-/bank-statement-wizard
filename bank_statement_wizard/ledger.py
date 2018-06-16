@@ -19,6 +19,8 @@ class Ledger:
     def __init__(self):
         self.debit_transactions = []    # money spent/withdrawn
         self.credit_transactions = []   # money deposited
+        self.categorized_debit_transactions = {}
+        self.categorized_credit_transactions = {}
         self.debit_balance = 0.0
         self.credit_balance = 0.0
         self.balance = 0.0
@@ -67,3 +69,7 @@ Balance          : {:.2f}'''.format(self.credit_balance,
 
     def __iter__(self):
         return iter(self.debit_transactions + self.credit_transactions)
+
+    @property
+    def categories(self):
+        return list(set([i.transaction_category for i in self]))
