@@ -3,6 +3,12 @@ from typing import List, Dict, Callable, Optional, Tuple, Any
 import csv
 import ast
 import json
+import re
+
+
+def check_date(date: str):
+    date_regex = '^(0[1-9]|[12][0-9]|3[01])[-](0[1-9]|1[012])[-](19|20)\d\d$'
+    return bool(re.match(date_regex, date))
 
 
 def create_named_tuple_with_name_and_fields(name: str, fields: List[str]):
