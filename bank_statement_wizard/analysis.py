@@ -1,16 +1,17 @@
 import re
 from typing import Dict, List, Optional
 
-from .utility import Transaction
+from .utility import Transaction, filter_non_alphanumeric
 
 ExpenseCategory = str
 
 
-def regex_search_score(pattern: str, target: str):
+def regex_search_score(pattern: str, target: str) -> float:
+    target = filter_non_alphanumeric(target)
     match = re.search(pattern, target)
     if match:
         return float(len(match.group(0))) / float(len(target))
-    return 0.
+    return 0.0
 
 
 def get_match_score_for_category(
