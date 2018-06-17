@@ -1,6 +1,6 @@
 import argparse
 
-from .utility import load_json_file, create_named_tuple_with_name_and_fields, check_date
+from .utility import load_category_data, create_named_tuple_with_name_and_fields, check_date
 from .analysis import SimpleExpenseCategoryMatcher, regex_search_score
 from .constants_and_types import accepted_statements
 from .ledger import Ledger
@@ -45,7 +45,7 @@ def process_statement(
         statement_entries
     )
 
-    expense_categories = load_json_file(path_to_expense_categories)
+    expense_categories = load_category_data(path_to_expense_categories)
     matcher = SimpleExpenseCategoryMatcher(expense_categories)
     matcher.process_bulk(transactions)
 
