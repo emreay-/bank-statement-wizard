@@ -43,6 +43,7 @@ class StatementReportGenerator:
         ledger: Ledger
     ):
         self._add_info_table(statement_type, statement_date)
+        self._add_balance_table(ledger)
         self._add_transactions_table(ledger)
         self._add_category_stats(ledger)
         self._add_pie_chart(ledger, size=self.width*0.45, padding=0)
@@ -56,9 +57,19 @@ class StatementReportGenerator:
         info_table_data = [('Statement Date:', statement_date.replace('-', '/')),
                            ('Statement Type:', statement_type)]
         info_table = Table(info_table_data, spaceAfter=40, hAlign='LEFT')
-        info_table.setStyle(TableStyle([('FONTNAME', (0, 0), (0, 1), self.font_bold),
-                                        ('FONTNAME', (1, 0), (1, 1), self.font)]))
+        info_table.setStyle(TableStyle([('FONTNAME', (0, 0), (0, -1), self.font_bold),
+                                        ('FONTNAME', (1, 0), (-1, -1), self.font)]))
         self.report_elements.append(info_table)
+
+    def _add_balance_table(self, ledger: Ledger):
+        data = [('Credit Balance [Money deposited]       : ', '{:.2f}'.format(ledger.credit_balance)),
+                ('Debit Balance  [Money spent/withdrawn] : ',
+                 '{:.2f}'.format(ledger.debit_balance)),
+                ('Balance                                : ', '{:.2f}'.format(ledger.balance))]
+        balance_table = Table(data, spaceAfter=40, hAlign='LEFT')
+        balance_table.setStyle(TableStyle([('FONTNAME', (0, 0), (0, -1), self.font_bold),
+                                           ('FONTNAME', (1, 0), (-1, -1), self.font)]))
+        self.report_elements.append(balance_table)
 
     def _add_transactions_table(self, ledger: Ledger):
         title = [('Date', 'Description', 'Amount', 'Category')]
