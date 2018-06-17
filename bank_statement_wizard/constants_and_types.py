@@ -35,8 +35,10 @@ LloydsCreditCardStatementEntryToTranscation = StatementEntryToTransactionConvert
     ['date', 'amount', '', 'description', 'reference']
 )
 
+
 StatementBundle = create_named_tuple_with_name_and_fields(
     'StatementBundle', ['parser', 'converter'])
+
 
 accepted_statements = {
     'lloyds-debit': StatementBundle(LloydsAccountStatementParser, LloydsAccountsStatementEntryToTransaction),
