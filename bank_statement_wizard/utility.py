@@ -11,6 +11,20 @@ def check_date(date: str):
     return bool(re.match(date_regex, date))
 
 
+def replace_non_alphanumeric(text: str, replace_with: str = ' '):
+    return ''.join([char if char.isalnum() else replace_with for char in text])
+
+
+def remove_consecutive_chars(text: str, char: str):
+    return char.join([i for n, i in enumerate(text.split(char)) if i != '' or n == 0])
+
+
+def filter_non_alphanumeric(text: str):
+    filtered = replace_non_alphanumeric(text, replace_with=' ')
+    filtered = remove_consecutive_chars(filtered, char=' ')
+    return filtered
+
+
 def create_named_tuple_with_name_and_fields(name: str, fields: List[str]):
     new_tuple_type = namedtuple(typename=name, field_names=fields)
     new_tuple_type.__new__.__defaults__ = (
@@ -22,6 +36,13 @@ def load_json_file(path_to_json: str):
     with open(path_to_json, 'r') as handle:
         data = json.load(handle)
         return data
+
+
+def load_category_data(path_to_category_data: str):
+    data = load_json_file(path_to_category_data)
+    for category, keywords_list in data.items():
+        data[category] = [filter_non_alphanumeric(i) for i in keywords_list]
+    return data
 
 
 def parse_csv_to_list(
