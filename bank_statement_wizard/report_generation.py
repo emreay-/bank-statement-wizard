@@ -82,14 +82,16 @@ class StatementReportGenerator:
         self.report_elements.append(transactions_table)
 
     def _add_category_stats(self, ledger: Ledger):
-        title = [('Category', 'Total Amount', 'Percentage')]
-        data = [(category, '{:.2f}'.format(total), '{:.2f} %'.format(percentage * 100))
-                for category, (total, percentage) in ledger.get_expense_stats().items()]
-        data.sort(key=lambda x: float(x[1]), reverse=True)
-        stats_table = Table(title + data, spaceAfter=40)
-        stats_table.setStyle(TableStyle([('FONTNAME', (0, 0), (-1, 0), self.font_bold),
-                                         ('FONTNAME', (0, 1), (-1, -1), self.font)]))
-        self.report_elements.append(stats_table)
+        expense_stats = ledger.get_expense_stats()
+        if expense_stats:
+            title = [('Category', 'Total Amount', 'Percentage')]
+            data = [(category, '{:.2f}'.format(total), '{:.2f} %'.format(percentage * 100))
+                    for category, (total, percentage) in expense_stats.items()]
+            data.sort(key=lambda x: float(x[1]), reverse=True)
+            stats_table = Table(title + data, spaceAfter=40)
+            stats_table.setStyle(TableStyle([('FONTNAME', (0, 0), (-1, 0), self.font_bold),
+                                             ('FONTNAME', (0, 1), (-1, -1), self.font)]))
+            self.report_elements.append(stats_table)
 
     def _add_pie_chart(
             self,
@@ -97,18 +99,20 @@ class StatementReportGenerator:
             size: int,
             padding: int,
     ):
-        figure = Drawing(self.width, min(size + 2 * padding, self.height))
-        pie_chart = Pie()
-        pie_chart.x = (self.width - size) / 2
-        pie_chart.y = padding
-        pie_chart.width = size
-        pie_chart.height = size
-        pie_chart.data = [i[0] for i in ledger.get_expense_stats().values()]
-        pie_chart.labels = list(ledger.get_expense_stats().keys())
-        pie_chart.slices.strokeWidth = 0.5
-        pie_chart.sideLabels = True
-        figure.add(pie_chart)
-        self.report_elements.append(figure)
+        expense_stats = ledger.get_expense_stats()
+        if expense_stats:
+            figure = Drawing(self.width, min(size + 2 * padding, self.height))
+            pie_chart = Pie()
+            pie_chart.x = (self.width - size) / 2
+            pie_chart.y = padding
+            pie_chart.width = size
+            pie_chart.height = size
+            pie_chart.data = [i[0] for i in expense_stats.values()]
+            pie_chart.labels = list(ledger.get_expense_stats().keys())
+            pie_chart.slices.strokeWidth = 0.5
+            pie_chart.sideLabels = True
+            figure.add(pie_chart)
+            self.report_elements.append(figure)
 
     def _set_report_path(self, path_to_output_dir: str, statement_type: str, statement_date: str):
         self.report_path = os.path.join(path_to_output_dir, '{}_report_{}.pdf'.format(
