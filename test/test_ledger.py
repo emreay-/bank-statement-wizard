@@ -13,19 +13,19 @@ class LedgerTests(UnitTestBase):
         cls.__transactions = [
             Transaction(
                 date='2018-01-01',
-                debit_amount=100.5,
+                amount=-100.5,
             ),
             Transaction(
                 date='2018-01-02',
-                debit_amount=1589.5,
+                amount=-1589.5,
             ),
             Transaction(
                 date='2018-01-03',
-                credit_amount=2500.0
+                amount=2500.0
             ),
             Transaction(
                 date='2018-01-03',
-                credit_amount=37.0
+                amount=37.0
             )
         ]
 
