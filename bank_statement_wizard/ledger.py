@@ -33,9 +33,11 @@ class Ledger:
 
     def separate_debit_and_credit_transactions(self, transactions: List[Transaction]):
         for transaction in transactions:
-            if transaction.debit_amount != None:
+            if transaction.amount == None:
+                continue
+            elif transaction.amount <= 0.0:
                 self.debit_transactions.append(transaction)
-            elif transaction.credit_amount != None:
+            elif transaction.amount > 0.0:
                 self.credit_transactions.append(transaction)
 
     def categorize_transactions(self):
@@ -45,10 +47,10 @@ class Ledger:
             self.credit_transactions)
 
     def update_balance(self):
-        self.debit_balance = sum(
-            [transaction.debit_amount for transaction in self.debit_transactions])
-        self.credit_balance = sum(
-            [transaction.credit_amount for transaction in self.credit_transactions])
+        self.debit_balance = abs(sum(
+            [transaction.amount for transaction in self.debit_transactions]))
+        self.credit_balance = abs(sum(
+            [transaction.amount for transaction in self.credit_transactions]))
         self.balance = self.credit_balance - self.debit_balance
 
     def get_transactions_with_category(self, category: str) -> List[Transaction]:
@@ -63,7 +65,7 @@ class Ledger:
         if self.debit_balance > 0.0:
             _stats = {}
             for category, transactions in self.categorized_debit_transactions.items():
-                _total = sum([i.debit_amount for i in transactions])
+                _total = abs(sum([i.amount for i in transactions]))
                 _percentage = _total/self.debit_balance
                 _stats[category] = (_total, _percentage)
             assert sum([i[1] for i in _stats.values()]) - 1.0 < 1e-3
