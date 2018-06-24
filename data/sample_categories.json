@@ -1,0 +1,20 @@
+{
+    "groceries": [
+        "market",
+        "corner shop"
+    ],
+    
+    "eating_out": [
+        "restaurant",
+        "pub",
+        "pizza",
+        "burger"
+    ],
+
+    "regular": [
+        "bill",
+        "tax",
+        "rent",
+        "salary"
+    ]
+}
