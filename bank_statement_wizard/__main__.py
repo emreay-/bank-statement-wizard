@@ -1,10 +1,10 @@
 import argparse
 
-from .utility import load_category_data, create_named_tuple_with_name_and_fields, check_date
-from .analysis import SimpleExpenseCategoryMatcher, regex_search_score
-from .constants_and_types import accepted_statements
-from .ledger import Ledger
-from .report_generation import StatementReportGenerator
+from bank_statement_wizard.utility import load_category_data, create_named_tuple_with_name_and_fields, check_date
+from bank_statement_wizard.analysis import SimpleExpenseCategoryMatcher, regex_search_score
+from bank_statement_wizard.constants_and_types import accepted_statements
+from bank_statement_wizard.ledger import Ledger
+from bank_statement_wizard.report_generation import StatementReportGenerator
 
 
 def date_type(date):
