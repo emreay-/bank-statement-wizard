@@ -1,5 +1,5 @@
-from collections import namedtuple, OrderedDict
-from typing import List, Dict, Callable, Optional, Tuple, Any
+from collections import namedtuple, OrderedDict, defaultdict
+from typing import List, Dict, Callable, Optional, Tuple, Any, Union
 import csv
 import ast
 import json
@@ -121,37 +121,48 @@ class Transaction:
     def __init__(
         self,
         date: Optional[str] = None,
-        debit_amount: Optional[float] = None,
-        credit_amount: Optional[float] = None,
+        amount: Optional[float] = None,
         description: Optional[str] = None,
         other: Optional[Any] = None,
         transaction_category: Optional[str] = None
     ):
-        self.date = date
-        self.debit_amount = abs(
-            float(debit_amount)) if debit_amount != None else None
-        self.credit_amount = abs(
-            float(credit_amount)) if credit_amount != None else None
-        self.description = description
-        self.other = other
-        self.transaction_category = transaction_category
+        self._date = date
+        self._amount = float(amount) if amount != None else None
+        self._description = description
+        self._other = other
+        self._transaction_category = transaction_category
+
+    @property
+    def date(self):
+        return self._date
 
     @property
     def amount(self):
-        if self.debit_amount != None and self.credit_amount == None:
-            return (-1.0) * self.debit_amount
-        elif self.debit_amount == None and self.credit_amount != None:
-            return self.credit_amount
+        return self._amount
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def other(self):
+        return self._other
+
+    @property
+    def transaction_category(self):
+        return self._transaction_category
+
+    @transaction_category.setter
+    def transaction_category(self, value):
+        self._transaction_category = value
 
     def __str__(self):
         return '''Date                  : {}
-Debit Amount          : {}
-Credit Amount         : {}
+Amount                : {}
 Desc                  : {}
 Other                 : {}
 Transaction Category  : {}\n'''.format(self.date,
-                                       self.debit_amount,
-                                       self.credit_amount,
+                                       self.amount,
                                        self.description,
                                        self.other,
                                        self.transaction_category)
@@ -159,15 +170,56 @@ Transaction Category  : {}\n'''.format(self.date,
 
 class StatementEntryToTransactionConverter:
 
-    def __init__(self, matching_entry_fields_in_order: List[str]):
-        self._matching_entry_fields_in_order = matching_entry_fields_in_order
+    def __init__(
+        self,
+        matching_entry_fields_in_order: List[Union[str, List[str]]],
+        field_name_to_process_function: Optional[Dict[str, Callable]] = None
+    ):
+        assert len(self.transaction_fields) == len(
+            matching_entry_fields_in_order)
+
+        self._matching_entry_fields = {
+            innate_field: matching_fields for innate_field, matching_fields in
+            zip(self.transaction_fields, matching_entry_fields_in_order)
+        }
+        self.field_name_to_process_function = field_name_to_process_function if \
+            field_name_to_process_function != None else {}
 
     def __call__(self, statement_entry) -> Transaction:
-        return Transaction(
-            *[getattr(statement_entry, i) if
-              (i != '' and '' != getattr(statement_entry, i)) else None
-              for i in self._matching_entry_fields_in_order]
-        )
+        _values = defaultdict(lambda: None)
+        for innate_field, matching_fields in self._matching_entry_fields.items():
+            if type(matching_fields) == str:
+                _values[innate_field] = self._get_field_value(
+                    statement_entry, matching_fields)
+            else:
+                for field in matching_fields:
+                    _value = self._get_field_value(statement_entry, field)
+                    if _value != None:
+                        _values[innate_field] = _value
+                        break
+
+        return Transaction(_values['date'], _values['amount'], _values['description'], _values['other'])
+
+    def _get_field_value(self, statement_entry, field):
+        if self._is_valid_field(field):
+            _value = getattr(statement_entry, field)
+            if self._is_valid_field_value(_value):
+                if field in self.field_name_to_process_function:
+                    _value = self.field_name_to_process_function[field](_value)
+                return _value
+        return None
+
+    @staticmethod
+    def _is_valid_field(field: str):
+        return field != ''
+
+    @staticmethod
+    def _is_valid_field_value(value):
+        return value != '' and value != None
 
     def process_bulk(self, statement_entries: List) -> List[Transaction]:
         return [self(i) for i in statement_entries]
+
+    @property
+    def transaction_fields(self):
+        return ['date', 'amount', 'description', 'other']
