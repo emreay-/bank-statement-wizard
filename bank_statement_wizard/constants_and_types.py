@@ -19,8 +19,9 @@ LloydsAccountStatementEntry, LloydsAccountStatementParser = \
 
 
 LloydsAccountsStatementEntryToTransaction = StatementEntryToTransactionConverter(
-    ['transaction_date', 'debit_amount', 'credit_amount',
-        'transaction_description', 'transaction_type']
+    matching_entry_fields_in_order=['transaction_date', ['debit_amount', 'credit_amount'],
+                                    'transaction_description', 'transaction_type'],
+    field_name_to_process_function={'debit_amount': lambda x: -1.0 * x}
 )
 
 
@@ -32,7 +33,9 @@ LloydsCreditCardStatementEntry, LloydsCreditCardStatementParser = \
 
 
 LloydsCreditCardStatementEntryToTranscation = StatementEntryToTransactionConverter(
-    ['date', 'amount', '', 'description', 'reference']
+    matching_entry_fields_in_order=[
+        'date', 'amount', 'description', 'reference'],
+    field_name_to_process_function={'amount': lambda x: -1.0 * x}
 )
 
 
