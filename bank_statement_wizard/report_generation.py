@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
@@ -9,7 +9,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.piecharts import Pie, Rect
 
-from .ledger import Ledger
+from bank_statement_wizard.ledger import Ledger
 
 
 def check_font(font: str):
@@ -40,13 +40,14 @@ class StatementReportGenerator:
         path_to_output_dir: str,
         statement_type: str,
         statement_date: str,
-        ledger: Ledger
+        ledger: Ledger,
+        expense_stats: Dict[str, Tuple]
     ):
         self._add_info_table(statement_type, statement_date)
         self._add_balance_table(ledger)
         self._add_transactions_table(ledger)
-        self._add_category_stats(ledger)
-        self._add_pie_chart(ledger, size=self.width*0.45, padding=0)
+        self._add_category_stats(expense_stats)
+        self._add_pie_chart(expense_stats, size=self.width * 0.45, padding=0)
 
         self._set_report_path(path_to_output_dir,
                               statement_type, statement_date)
@@ -74,15 +75,14 @@ class StatementReportGenerator:
     def _add_transactions_table(self, ledger: Ledger):
         title = [('Date', 'Description', 'Amount', 'Category')]
         transactions_data = title + \
-            [(i.date, i.description, i.amount, i.transaction_category)
-             for i in ledger]
+            [(i.date, i.description, i.amount, i.category)
+             for i in ledger.transactions]
         transactions_table = Table(transactions_data, spaceAfter=40)
         transactions_table.setStyle(TableStyle([('FONTNAME', (0, 0), (-1, 0), self.font_bold),
                                                 ('FONTNAME', (0, 1), (-1, -1), self.font)]))
         self.report_elements.append(transactions_table)
 
-    def _add_category_stats(self, ledger: Ledger):
-        expense_stats = ledger.get_expense_stats()
+    def _add_category_stats(self, expense_stats: Dict[str, Tuple]):
         if expense_stats:
             title = [('Category', 'Total Amount', 'Percentage')]
             data = [(category, '{:.2f}'.format(total), '{:.2f} %'.format(percentage * 100))
@@ -95,11 +95,10 @@ class StatementReportGenerator:
 
     def _add_pie_chart(
             self,
-            ledger: Ledger,
+            expense_stats: Dict[str, Tuple],
             size: int,
             padding: int,
     ):
-        expense_stats = ledger.get_expense_stats()
         if expense_stats:
             figure = Drawing(self.width, min(size + 2 * padding, self.height))
             pie_chart = Pie()
@@ -108,7 +107,7 @@ class StatementReportGenerator:
             pie_chart.width = size
             pie_chart.height = size
             pie_chart.data = [i[0] for i in expense_stats.values()]
-            pie_chart.labels = list(ledger.get_expense_stats().keys())
+            pie_chart.labels = list(expense_stats.keys())
             pie_chart.slices.strokeWidth = 0.5
             pie_chart.sideLabels = True
             figure.add(pie_chart)

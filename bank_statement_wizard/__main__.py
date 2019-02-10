@@ -1,10 +1,12 @@
 import argparse
 
-from bank_statement_wizard.utility import load_category_data, create_named_tuple_with_name_and_fields, check_date
-from bank_statement_wizard.analysis import SimpleExpenseCategoryMatcher, regex_search_score
-from bank_statement_wizard.constants_and_types import accepted_statements
 from bank_statement_wizard.ledger import Ledger
+from bank_statement_wizard.utility import load_category_data, check_date
+from bank_statement_wizard.analysis import SimpleExpenseCategoryMatcher
 from bank_statement_wizard.report_generation import StatementReportGenerator
+from bank_statement_wizard.analysis import group_transactions_using_category
+from bank_statement_wizard.parsing.support import get_loader, statement_types
+from bank_statement_wizard.analysis import get_expense_stats_for_transaction_groups
 
 
 def date_type(date):
@@ -21,7 +23,7 @@ def parse_arguments():
     parser.add_argument('-s', '--statement',
                         help='Path to statement in csv file', required=True)
     parser.add_argument('-t', '--type',
-                        choices=list(accepted_statements.keys()), help='Statement type', required=True)
+                        choices=statement_types(), help='Statement type', required=True)
     parser.add_argument('-d', '--date', help='Statement date in dd-mm-yyyy format',
                         type=date_type, required=True)
     parser.add_argument('-o', '--output', help='Output directory path',
@@ -38,25 +40,33 @@ def process_statement(
     statement_date: str,
     path_to_output_dir: str
 ):
-    statement_entries = accepted_statements[statement_type].parser(
-        path_to_statement_csv
-    )
-    transactions = accepted_statements[statement_type].converter.process_bulk(
-        statement_entries
-    )
+    ledger = Ledger()
+    for transaction in get_loader(statement_type)(path_to_statement_csv):
+        if transaction.amount < 0.0:
+            ledger.add_debit_transaction(transaction)
+        else:
+            ledger.add_credit_transaction(transaction)
 
     expense_categories = load_category_data(path_to_expense_categories)
     matcher = SimpleExpenseCategoryMatcher(expense_categories)
-    matcher.process_bulk(transactions)
+    matcher.match_bulk(ledger.transactions)
 
-    ledger = Ledger().run(transactions)
-    print('\n{}\n\n'.format(ledger))
+    print('\n{}\n'.format(ledger))
+
+    if ledger.debit_balance > 0.0:
+        grouped_debit_transactions = group_transactions_using_category(
+            ledger.debit_transactions)
+        expense_stats = get_expense_stats_for_transaction_groups(
+            grouped_debit_transactions, ledger.debit_balance)
+    else:
+        expense_stats = None
 
     StatementReportGenerator()(
         path_to_output_dir=path_to_output_dir,
         statement_type=statement_type,
         statement_date=statement_date,
-        ledger=ledger
+        ledger=ledger,
+        expense_stats=expense_stats
     )
 
 
