@@ -3,7 +3,7 @@ from typing import Dict, Callable, TextIO, Any, List, Optional
 
 
 def get_line_parser_from_ordered_dict(field_name_to_column_parser: OrderedDict):
-    
+
     def _line_parser(line_tokens: List[str]) -> Dict[str, Any]:
         out = {}
         for token, (field_name, column_parser) in zip(line_tokens, field_name_to_column_parser.items()):
@@ -29,7 +29,10 @@ def parse_csv_using_schema(path_to_file: str, schema: Dict, output_data_type: st
             if output_data_type is 'list':
                 data.append(parsed_line)
             else:
-                [data.get(key, []).append(value) for key, value in parsed_line]
+                for key, value in parsed_line:
+                    if key not in data:
+                        data[key] = []
+                    data.key.append(value)
     return data
 
 
