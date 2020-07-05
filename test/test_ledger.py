@@ -1,12 +1,9 @@
 import unittest
 
-from .testing_utility import UnitTestBase
-from .context import bank_statement_wizard
-from bank_statement_wizard.ledger import Ledger
-from bank_statement_wizard.utility import Transaction
+from bank_statement_wizard.ledger import Ledger, Transaction
 
 
-class LedgerTests(UnitTestBase):
+class LedgerTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

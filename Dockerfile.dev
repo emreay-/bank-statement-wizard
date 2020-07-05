@@ -1,0 +1,6 @@
+ARG BSWIZ_IMAGE=eay/bank_statement_wizard:latest
+FROM $BSWIZ_IMAGE
+
+WORKDIR /src
+COPY . .
+RUN pip3 install -r requirements_dev.txt
