@@ -31,17 +31,10 @@ You need to supply a simple json file in order to categorize the expenses. The j
 ```
 
 ## How to use it?
-Make sure that `BankStatementWizard` is in your `PYTHONPATH`. If you are not sure you can run:
+After the installation you can access the CLI with `bswiz` command;
 
 ```
-cd path/to/BankStatementWizard/
-source environment
-```
-
-Then;
-
-```
-python bank_statement_wizard -e path/to/expense_categories.json -s path/to/statement.csv -t lloyds-debit -d 01-01-2016 -o path/to/output_dir/
+bswiz -e path/to/expense_categories.json -s path/to/statement.csv -t lloyds-debit -d 01-01-2016 -o path/to/output_dir/
 ```
 
 Remember to change the paths and the statement type according to your usage.
