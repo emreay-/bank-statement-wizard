@@ -7,7 +7,8 @@ setup(
         "an analysis of expenses, i.e. the amount that spent on "
         "groceries/going out etc.",
     author="Emre Ay",
-    packages=find_packages(),
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     entry_points={"console_scripts": [
         "bswiz = bank_statement_wizard.__main__:main",
     ]},
