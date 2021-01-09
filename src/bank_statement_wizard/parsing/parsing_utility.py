@@ -1,5 +1,10 @@
+from datetime import date, datetime
 from collections import OrderedDict
 from typing import Dict, Callable, TextIO, Any, List, Optional
+
+
+__all__ = ["get_line_parser_from_ordered_dict", "parse_csv_using_schema", "load_lines", "optional_str_to_float",
+           "get_date_parser", "to_stripped_string", "default_delimiter", "default_comment_char"]
 
 
 def get_line_parser_from_ordered_dict(field_name_to_column_parser: OrderedDict):
@@ -13,26 +18,28 @@ def get_line_parser_from_ordered_dict(field_name_to_column_parser: OrderedDict):
     return _line_parser
 
 
-def parse_csv_using_schema(path_to_file: str, schema: Dict, output_data_type: str = 'list'):
-    data = [] if output_data_type is 'list' else {}
+def parse_csv_using_schema(path_to_file: str, schema: Dict, output_data_type: str = "list"):
+    data = [] if output_data_type == "list" else {}
 
-    with open(path_to_file, 'r') as handle_to_file:
+    with open(path_to_file, "r") as handle_to_file:
         for line in load_lines(handle_to_file):
-            if schema['is_ignore_line'](line):
+            if schema["is_ignore_line"](line):
                 continue
 
-            tokens = line.strip().split(schema['delimiter'])
+            tokens = line.strip().split(schema["delimiter"])
             if len(tokens) == 0:
                 continue
 
-            parsed_line = schema['line_parser'](tokens)
-            if output_data_type is 'list':
+            parsed_line = schema["line_parser"](tokens)
+            if output_data_type == "list":
                 data.append(parsed_line)
-            else:
+            elif output_data_type == "dict":
                 for key, value in parsed_line:
                     if key not in data:
                         data[key] = []
-                    data.key.append(value)
+                    data[key].append(value)
+            else:
+                raise ValueError(f"Invalid data type {output_data_type}")
     return data
 
 
@@ -47,13 +54,19 @@ def optional_str_to_float(data: Optional[str]):
     return None
 
 
+def get_date_parser(date_format: str) -> Callable[[str], date]:
+    def _date_parser(date_value: str) -> date:
+        return datetime.strptime(date_value, date_format).date()
+    return _date_parser
+
+
 def to_stripped_string(data: str):
     return data.strip()
 
 
 def default_comment_char():
-    return '#'
+    return "#"
 
 
 def default_delimiter():
-    return ','
+    return ","

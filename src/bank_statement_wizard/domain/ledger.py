@@ -1,4 +1,8 @@
+import datetime
+
 from typing import List, Dict, Tuple, Optional, Any
+from .date_range import DateRange, DateRangeElement, Inclusivity
+
 
 __all__ = ["Transaction", "Ledger"]
 
@@ -18,16 +22,16 @@ class Transaction:
     def __init__(
         self,
         amount: float,
-        date: Optional[str] = None,
+        date: Optional[datetime.date] = None,
         description: Optional[str] = None,
         additional_info: Optional[Any] = None,
         category: Optional[str] = None
     ):
         self.amount = amount
-        self.date = date
-        self.description = description
-        self.additional_info = additional_info
-        self.category = category
+        self.date: datetime.date = date
+        self.description: str = description
+        self.additional_info: str = additional_info
+        self.category: str = category
 
     def __str__(self):
         return f"Date                  : {self.date}" \
@@ -40,11 +44,11 @@ class Transaction:
 class Ledger:
     # https://en.wikipedia.org/wiki/Debits_and_credits#Terminology
     def __init__(self):
-        self._debit_transactions = []    # money spent/withdrawn
-        self._credit_transactions = []   # money deposited
-        self._debit_balance = 0.0
-        self._credit_balance = 0.0
-        self._balance = 0.0
+        self._debit_transactions: List[Transaction] = []    # money spent/withdrawn
+        self._credit_transactions: List[Transaction] = []   # money deposited
+        self._debit_balance: float = 0.0
+        self._credit_balance: float = 0.0
+        self._balance: float = 0.0
 
     @property
     def balance(self):
@@ -67,8 +71,22 @@ class Ledger:
         return self._credit_transactions
 
     @property
-    def transactions(self):
+    def transactions(self) -> List[Transaction]:
         return sorted(self._debit_transactions + self._credit_transactions, key=lambda x: x.date)
+
+    @property
+    def date_range(self) -> DateRange:
+        transactions = self.transactions
+        return DateRange(
+            start=DateRangeElement(
+                date=transactions[0].date,
+                inclusivity=Inclusivity.closed
+            ),
+            end=DateRangeElement(
+                date=transactions[-1].date,
+                inclusivity=Inclusivity.closed
+            ),
+        )
 
     def add_transaction(self, transaction: Transaction) -> "Ledger":
         if transaction.amount < 0.0:

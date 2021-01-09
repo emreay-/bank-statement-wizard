@@ -6,8 +6,8 @@ from .lloyds_bank_uk import load_transactions_from_lloyds_bank_uk_current_accoun
 
 
 class SupportedStatementTypes(Enum):
-    LloydsBankUKCurrentAccountStatement = 'lloyds-debit'
-    LloydsBankUKCreditCardStatement = 'lloyds-credit'
+    LloydsBankUKCurrentAccountStatement = "lloyds-debit"
+    LloydsBankUKCreditCardStatement = "lloyds-credit"
 
 
 def statement_types() -> List[str]:
@@ -19,4 +19,4 @@ def get_loader(statement_type: str) -> Callable:
         return load_transactions_from_lloyds_bank_uk_current_account_statement
     elif statement_type == SupportedStatementTypes.LloydsBankUKCreditCardStatement.value:
         return load_transactions_from_lloyds_bank_uk_credit_card_statement
-    raise ValueError('{} is not a valid statement type'.format(statement_type))
+    raise ValueError("{} is not a valid statement type".format(statement_type))

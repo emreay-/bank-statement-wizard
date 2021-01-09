@@ -33,7 +33,7 @@ class SimpleExpenseCategoryMatcher:
     def __init__(
         self,
         expense_category_data: Dict[ExpenseCategory, List[str]],
-        default_expense_category: Optional[str] = 'unidentified'
+        default_expense_category: Optional[str] = "unidentified"
     ):
         self.expense_category_data = expense_category_data
         self.default_expense_category = default_expense_category

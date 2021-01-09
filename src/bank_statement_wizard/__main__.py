@@ -12,13 +12,6 @@ from bank_statement_wizard.parsing.support import get_loader, statement_types
 __all__ = ["main"]
 
 
-def date_type(date):
-    if not check_date(date):
-        raise argparse.ArgumentTypeError(
-            "{} is not a valid date, it should be in dd-mm-yyyy format".format(date))
-    return date
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--expense_categories",
@@ -27,20 +20,16 @@ def parse_arguments():
                         help="Path to statement(s) in csv file", nargs="+")
     parser.add_argument("-t", "--type",
                         choices=statement_types(), help="Statement type", required=True)
-    parser.add_argument("-d", "--date", help="Statement date in dd-mm-yyyy format",
-                        type=date_type, required=True)
     parser.add_argument("-o", "--output", help="Output directory path",
                         required=True)
     args = parser.parse_args()
-
-    return args.expense_categories, args.statements, args.type, args.date, args.output
+    return args.expense_categories, args.statements, args.type, args.output
 
 
 def process_statement(
     expense_categories_file: str,
     statement_paths: List[str],
     statement_type: str,
-    statement_date: str,
     path_to_output_dir: str
 ):
     ledger = Ledger()
@@ -66,7 +55,7 @@ def process_statement(
     StatementReportGenerator()(
         path_to_output_dir=path_to_output_dir,
         statement_type=statement_type,
-        statement_date=statement_date,
+        statement_date=str(ledger.date_range),
         ledger=ledger,
         expense_stats=expense_stats
     )

@@ -18,7 +18,7 @@ def check_font(font: str):
 
 class StatementReportGenerator:
 
-    _default_font = 'Courier'
+    _default_font = "Courier"
     _default_page_size = letter
     _default_margin = 72
 
@@ -55,42 +55,42 @@ class StatementReportGenerator:
         self._build()
 
     def _add_info_table(self, statement_type: str, statement_date: str):
-        info_table_data = [('Statement Date:', statement_date.replace('-', '/')),
-                           ('Statement Type:', statement_type)]
-        info_table = Table(info_table_data, spaceAfter=40, hAlign='LEFT')
-        info_table.setStyle(TableStyle([('FONTNAME', (0, 0), (0, -1), self.font_bold),
-                                        ('FONTNAME', (1, 0), (-1, -1), self.font)]))
+        info_table_data = [("Statement Date:", statement_date.replace("-", "/")),
+                           ("Statement Type:", statement_type)]
+        info_table = Table(info_table_data, spaceAfter=40, hAlign="LEFT")
+        info_table.setStyle(TableStyle([("FONTNAME", (0, 0), (0, -1), self.font_bold),
+                                        ("FONTNAME", (1, 0), (-1, -1), self.font)]))
         self.report_elements.append(info_table)
 
     def _add_balance_table(self, ledger: Ledger):
-        data = [('Credit Balance [Money deposited]       : ', '{:.2f}'.format(ledger.credit_balance)),
-                ('Debit Balance  [Money spent/withdrawn] : ',
-                 '{:.2f}'.format(ledger.debit_balance)),
-                ('Balance                                : ', '{:.2f}'.format(ledger.balance))]
-        balance_table = Table(data, spaceAfter=40, hAlign='LEFT')
-        balance_table.setStyle(TableStyle([('FONTNAME', (0, 0), (0, -1), self.font_bold),
-                                           ('FONTNAME', (1, 0), (-1, -1), self.font)]))
+        data = [("Credit Balance [Money deposited]       : ", "{:.2f}".format(ledger.credit_balance)),
+                ("Debit Balance  [Money spent/withdrawn] : ",
+                 "{:.2f}".format(ledger.debit_balance)),
+                ("Balance                                : ", "{:.2f}".format(ledger.balance))]
+        balance_table = Table(data, spaceAfter=40, hAlign="LEFT")
+        balance_table.setStyle(TableStyle([("FONTNAME", (0, 0), (0, -1), self.font_bold),
+                                           ("FONTNAME", (1, 0), (-1, -1), self.font)]))
         self.report_elements.append(balance_table)
 
     def _add_transactions_table(self, ledger: Ledger):
-        title = [('Date', 'Description', 'Amount', 'Category')]
+        title = [("Date", "Description", "Amount", "Category")]
         transactions_data = title + \
             [(i.date, i.description, i.amount, i.category)
              for i in ledger.transactions]
         transactions_table = Table(transactions_data, spaceAfter=40)
-        transactions_table.setStyle(TableStyle([('FONTNAME', (0, 0), (-1, 0), self.font_bold),
-                                                ('FONTNAME', (0, 1), (-1, -1), self.font)]))
+        transactions_table.setStyle(TableStyle([("FONTNAME", (0, 0), (-1, 0), self.font_bold),
+                                                ("FONTNAME", (0, 1), (-1, -1), self.font)]))
         self.report_elements.append(transactions_table)
 
     def _add_category_stats(self, expense_stats: Dict[str, Tuple]):
         if expense_stats:
-            title = [('Category', 'Total Amount', 'Percentage')]
-            data = [(category, '{:.2f}'.format(total), '{:.2f} %'.format(percentage * 100))
+            title = [("Category", "Total Amount", "Percentage")]
+            data = [(category, "{:.2f}".format(total), "{:.2f} %".format(percentage * 100))
                     for category, (total, percentage) in expense_stats.items()]
             data.sort(key=lambda x: float(x[1]), reverse=True)
             stats_table = Table(title + data, spaceAfter=40)
-            stats_table.setStyle(TableStyle([('FONTNAME', (0, 0), (-1, 0), self.font_bold),
-                                             ('FONTNAME', (0, 1), (-1, -1), self.font)]))
+            stats_table.setStyle(TableStyle([("FONTNAME", (0, 0), (-1, 0), self.font_bold),
+                                             ("FONTNAME", (0, 1), (-1, -1), self.font)]))
             self.report_elements.append(stats_table)
 
     def _add_pie_chart(
@@ -114,7 +114,7 @@ class StatementReportGenerator:
             self.report_elements.append(figure)
 
     def _set_report_path(self, path_to_output_dir: str, statement_type: str, statement_date: str):
-        self.report_path = os.path.join(path_to_output_dir, '{}_report_{}.pdf'.format(
+        self.report_path = os.path.join(path_to_output_dir, "{}_report_{}.pdf".format(
             statement_type, statement_date))
 
     def _create_document(self):
@@ -156,7 +156,7 @@ class StatementReportGenerator:
 
     @property
     def font_bold(self):
-        return '{}-Bold'.format(self.font)
+        return "{}-Bold".format(self.font)
 
     @property
     def margin(self):
