@@ -65,6 +65,10 @@ class MainMenuView:
     footer: str = ""
     buttons: List[str] = field(default_factory=list)
 
+    _vertical_index: int = 0
+    _current_height: int = 0
+    _current_width: int = 0
+
     @staticmethod
     def initialize_colors():
         curses.init_pair(ColorPair.title, curses.COLOR_GREEN, curses.COLOR_BLACK)
@@ -81,36 +85,38 @@ class MainMenuView:
         self.footer = "INFO: "
         self.buttons = ["Add Statement", "Select Output Directory"]
 
+    def _render_line(self, window: curses.window, text: str, relativity_x: float, relativity_y: float):
+        if self._vertical_index == 0:
+            self._vertical_index += adjust_height_relative(self._current_height, relativity_y)
+
+        _x = adjust_width_relative(text, self._current_width, relativity_x)
+        window.addstr(self._vertical_index, _x, text)
+        self._vertical_index += len(text.splitlines())
+
     def render(self, window: curses.window, width: int, height: int, selected_vertical_element: int):
         window.addstr(0, 0, self.header, curses.color_pair(ColorPair.header))
 
         with attributes(curses.color_pair(ColorPair.footer), window=window):
             window.addstr(height - 1, 0, self.footer)
 
-        vertical_index = 0
+        self._vertical_index = 0
+        self._current_height = height
+        self._current_width = width
+
         with attributes(curses.color_pair(ColorPair.title), curses.A_BOLD, window=window):
-            vertical_index += adjust_height_relative(height, 0.1)
-            title_x = adjust_width_relative(self.title, width, 0.5)
-            window.addstr(vertical_index, title_x, self.title)
+            self._render_line(window, self.title, relativity_x=0.5, relativity_y=0.1)
 
-        vertical_index += 1
-        sub_title_x = adjust_width_relative(self.subtitle, width, 0.5)
-        window.addstr(vertical_index, sub_title_x, self.subtitle)
-
-        vertical_index += 1
-        line = "=" * int(width * 0.3)
-        line_x = adjust_width_relative(line, width, 0.5)
-        window.addstr(vertical_index, line_x, line)
+        self._render_line(window, self.subtitle, relativity_x=0.5, relativity_y=0.1)
+        self._render_line(window, "\n", relativity_x=0.5, relativity_y=0.1)
+        self._render_line(window, "=" * int(width * 0.3), relativity_x=0.5, relativity_y=0.1)
+        self._render_line(window, "\n", relativity_x=0.5, relativity_y=0.1)
 
         for i, button in enumerate(self.buttons):
             attr = curses.color_pair(ColorPair.selected) if i == selected_vertical_element \
                 else curses.color_pair(ColorPair.regular)
 
             with attributes(attr, window=window):
-                vertical_index += 1
-                button_x = adjust_width_relative(button, width, 0.5)
-                window.addstr(vertical_index, button_x, button)
-
+                self._render_line(window, button, relativity_x=0.5, relativity_y=0.1)
 
 class MainMenu:
     def __init__(self):
@@ -133,6 +139,8 @@ class MainMenu:
         self._view.footer = self._view.footer[:width-1]
 
     def _handle_key_stroke(self):
+        curses.curs_set(False)
+
         if self._key_stroked == curses.KEY_UP:
             self._selected_vertical_element -= 1
         elif self._key_stroked == curses.KEY_DOWN:
