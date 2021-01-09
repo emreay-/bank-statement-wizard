@@ -38,7 +38,7 @@ class BankStatementWizardView:
     header: Optional[urwid.Widget] = None
     exit_text: Optional[urwid.Widget] = None
 
-    add_statement_button: Optional[urwid.Widget] = None
+    statements_button: Optional[urwid.Widget] = None
     filter_button: Optional[urwid.Widget] = None
     plot_button: Optional[urwid.Widget] = None
     export_button: Optional[urwid.Widget] = None
@@ -54,15 +54,15 @@ class BankStatementWizardView:
         self.header = urwid.Text("Press ESC to exit")
         self.header = urwid.AttrWrap(self.header, "header")
 
-        self.add_statement_button = urwid.Button(label="Add Statement")
-        self.filter_button = urwid.Button(label="Filter Menu")
-        self.plot_button = urwid.Button(label="Plot Menu")
-        self.export_button = urwid.Button(label="Export Menu")
-        self.search_button = urwid.Button(label="Search")
-        self.go_to_button = urwid.Button(label="Go To...")
+        self.statements_button = urwid.Button(label="Statements Menu (F1)")
+        self.filter_button = urwid.Button(label="Filter Menu (F2)")
+        self.plot_button = urwid.Button(label="Plot Menu (F3)")
+        self.export_button = urwid.Button(label="Export Menu (F4)")
+        self.search_button = urwid.Button(label="Search (F5)")
+        self.go_to_button = urwid.Button(label="Go To... (F6)")
 
         self.menu = urwid.Columns([
-            self.add_statement_button,
+            self.statements_button,
             self.filter_button,
             self.plot_button,
             self.export_button,
