@@ -48,6 +48,7 @@ class ColorPair(IntEnum):
     header = 3
     footer = 4
     regular = 5
+    selected = 6
 
 
 @dataclass
@@ -62,6 +63,7 @@ class MainMenuView:
     subtitle: str = ""
     header: str = ""
     footer: str = ""
+    buttons: List[str] = field(default_factory=list)
 
     @staticmethod
     def initialize_colors():
@@ -69,28 +71,45 @@ class MainMenuView:
         curses.init_pair(ColorPair.subtitle, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(ColorPair.header, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(ColorPair.footer, curses.COLOR_GREEN, curses.COLOR_BLACK)
-        curses.init_pair(ColorPair.regular, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(ColorPair.regular, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        curses.init_pair(ColorPair.selected, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     def reset_data(self):
         self.title = "Bank Statement Wizard"
         self.subtitle = "Developed by Emre Ay"
         self.header = "Press ESC to exit"
         self.footer = "INFO: "
+        self.buttons = ["Add Statement", "Select Output Directory"]
 
-    def render(self, window: curses.window, width: int, height: int):
+    def render(self, window: curses.window, width: int, height: int, selected_vertical_element: int):
         window.addstr(0, 0, self.header, curses.color_pair(ColorPair.header))
 
         with attributes(curses.color_pair(ColorPair.footer), window=window):
             window.addstr(height - 1, 0, self.footer)
 
+        vertical_index = 0
         with attributes(curses.color_pair(ColorPair.title), curses.A_BOLD, window=window):
-            title_y = adjust_height_relative(height, 0.1)
+            vertical_index += adjust_height_relative(height, 0.1)
             title_x = adjust_width_relative(self.title, width, 0.5)
-            window.addstr(title_y, title_x, self.title)
+            window.addstr(vertical_index, title_x, self.title)
 
-        sub_title_y = title_y + 1
+        vertical_index += 1
         sub_title_x = adjust_width_relative(self.subtitle, width, 0.5)
-        window.addstr(sub_title_y, sub_title_x, self.subtitle)
+        window.addstr(vertical_index, sub_title_x, self.subtitle)
+
+        vertical_index += 1
+        line = "=" * int(width * 0.3)
+        line_x = adjust_width_relative(line, width, 0.5)
+        window.addstr(vertical_index, line_x, line)
+
+        for i, button in enumerate(self.buttons):
+            attr = curses.color_pair(ColorPair.selected) if i == selected_vertical_element \
+                else curses.color_pair(ColorPair.regular)
+
+            with attributes(attr, window=window):
+                vertical_index += 1
+                button_x = adjust_width_relative(button, width, 0.5)
+                window.addstr(vertical_index, button_x, button)
 
 
 class MainMenu:
@@ -98,8 +117,10 @@ class MainMenu:
         self._model = MainMenuModel()
         self._view = MainMenuView()
         self._main_window: Optional[curses.window] = None
-        self._key_stroked = 0
-        self._exit_key = 27
+        self._key_stroked: int = 0
+        self._exit_key: int = 27
+        self._selected_vertical_element: int = 0
+        self._number_of_vertical_elements: int = 2
 
     def _clear(self):
         self._main_window.clear()
@@ -110,6 +131,13 @@ class MainMenu:
         self._view.subtitle = self._view.subtitle[:width-1]
         self._view.header = self._view.header[:width-1]
         self._view.footer = self._view.footer[:width-1]
+
+    def _handle_key_stroke(self):
+        if self._key_stroked == curses.KEY_UP:
+            self._selected_vertical_element -= 1
+        elif self._key_stroked == curses.KEY_DOWN:
+            self._selected_vertical_element += 1
+        self._selected_vertical_element %= self._number_of_vertical_elements
 
     def __call__(self, window: curses.window, *args, **kwargs):
         self._main_window = window
@@ -122,8 +150,9 @@ class MainMenu:
             self._main_window.clear()
             height, width = self._main_window.getmaxyx()
 
+            self._handle_key_stroke()
             self._set_info(width)
-            self._view.render(self._main_window, width, height)
+            self._view.render(self._main_window, width, height, self._selected_vertical_element)
 
             self._main_window.refresh()
             self._key_stroked = self._main_window.getch()
