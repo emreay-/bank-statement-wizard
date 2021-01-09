@@ -1,11 +1,11 @@
 from typing import List, Dict
 from collections import OrderedDict
 
-from bank_statement_wizard.ledger import Transaction
-from bank_statement_wizard.parsing.parsing_utility import parse_csv_using_schema
-from bank_statement_wizard.parsing.parsing_utility import get_line_parser_from_ordered_dict
-from bank_statement_wizard.parsing.parsing_utility import default_comment_char, default_delimiter
-from bank_statement_wizard.parsing.parsing_utility import to_stripped_string, optional_str_to_float
+from ..domain.ledger import Transaction
+from .parsing_utility import parse_csv_using_schema
+from .parsing_utility import get_line_parser_from_ordered_dict
+from .parsing_utility import default_comment_char, default_delimiter
+from .parsing_utility import to_stripped_string, optional_str_to_float
 
 
 def get_current_account_statement_line_parser():

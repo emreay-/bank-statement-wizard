@@ -1,12 +1,11 @@
 import argparse
 
-from bank_statement_wizard.ledger import Ledger
-from bank_statement_wizard.utility import load_category_data, check_date
-from bank_statement_wizard.analysis import SimpleExpenseCategoryMatcher
+from bank_statement_wizard.domain.ledger import Ledger
+from bank_statement_wizard.domain.utility import load_category_data, check_date
+from bank_statement_wizard.domain.analysis import SimpleExpenseCategoryMatcher, \
+    group_transactions_using_category, get_expense_stats_for_transaction_groups
 from bank_statement_wizard.report_generation import StatementReportGenerator
-from bank_statement_wizard.analysis import group_transactions_using_category
 from bank_statement_wizard.parsing.support import get_loader, statement_types
-from bank_statement_wizard.analysis import get_expense_stats_for_transaction_groups
 
 
 def date_type(date):

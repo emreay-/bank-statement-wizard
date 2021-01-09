@@ -9,7 +9,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.piecharts import Pie, Rect
 
-from bank_statement_wizard.ledger import Ledger
+from .domain.ledger import Ledger
 
 
 def check_font(font: str):

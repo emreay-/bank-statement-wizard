@@ -1,2 +1,1 @@
-from . import utility
-from . import analysis
+from .domain import utility, analysis

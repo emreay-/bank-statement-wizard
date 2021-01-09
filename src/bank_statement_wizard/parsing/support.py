@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Callable, List
 
-from bank_statement_wizard.parsing.lloyds_bank_uk import load_transactions_from_lloyds_bank_uk_credit_card_statement
-from bank_statement_wizard.parsing.lloyds_bank_uk import load_transactions_from_lloyds_bank_uk_current_account_statement
+from .lloyds_bank_uk import load_transactions_from_lloyds_bank_uk_credit_card_statement
+from .lloyds_bank_uk import load_transactions_from_lloyds_bank_uk_current_account_statement
 
 
 class SupportedStatementTypes(Enum):
