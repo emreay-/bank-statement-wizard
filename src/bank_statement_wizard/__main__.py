@@ -41,10 +41,7 @@ def process_statement(
 ):
     ledger = Ledger()
     for transaction in get_loader(statement_type)(path_to_statement_csv):
-        if transaction.amount < 0.0:
-            ledger.add_debit_transaction(transaction)
-        else:
-            ledger.add_credit_transaction(transaction)
+        ledger.add_transaction(transaction)
 
     expense_categories = load_category_data(path_to_expense_categories)
     matcher = SimpleExpenseCategoryMatcher(expense_categories)
