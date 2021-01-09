@@ -14,6 +14,16 @@ run: build
 		-t eay/bank_statement_wizard bswiz
 
 
+.PHONY: runUnitTestsDocker
+runUnitTestsDocker: buildDev
+	docker run -it -t eay/bank_statement_wizard.dev coverage run --rcfile=./rcfile -m pytest -s ./test/ && coverage report
+
+
+.PHONY: devInstall
+devInstall:
+	pip3 install -e .
+
+
 .PHONY: runUnitTests
-runUnitTests: buildDev
-	docker run -it -t eay/bank_statement_wizard.dev py.test .
+runUnitTests: devInstall
+	coverage run --rcfile=./rcfile -m pytest -s ./test/ && coverage report
