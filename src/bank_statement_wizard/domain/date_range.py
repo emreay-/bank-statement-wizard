@@ -27,6 +27,6 @@ class DateRange:
         _s = f"{str(self.start.date)}, {str(self.end.date)}"
         _interval_start = Inclusivity.open.value[0] if self.start.inclusivity is \
             Inclusivity.open else Inclusivity.closed.value[0]
-        _interval_end = Inclusivity.open.value[-1] if self.start.inclusivity is \
+        _interval_end = Inclusivity.open.value[-1] if self.end.inclusivity is \
             Inclusivity.open else Inclusivity.closed.value[-1]
         return f"{_interval_start}{_s}{_interval_end}"
