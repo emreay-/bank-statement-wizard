@@ -13,6 +13,7 @@ setup(
         "bswiz = bank_statement_wizard.__main__:main",
     ]},
     install_requires=[
-        "reportlab"
+        "reportlab",
+        "urwid"
     ]
 )
