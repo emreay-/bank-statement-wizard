@@ -12,12 +12,21 @@ def set_escape_delay(delay: int = 25):
     os.environ.setdefault("ESCDELAY", str(delay))
 
 
-def adjust_width_center(text: str, width: int) -> int:
-    return int((width // 2) - (len(text) // 2) - len(text) % 2)
+def get_usable_height(height: int) -> int:
+    return height - 3
 
 
-def adjust_height_center(height: int) -> int:
-    return int((height // 2) - 2)
+def limit_height(height_value: int, current_height: int) -> int:
+    return max(min(height_value, get_usable_height(current_height)), 1)
+
+
+def adjust_width_relative(text: str, width: int, relativity: float) -> int:
+    return int(width * relativity) - (len(text) // 2)
+
+
+def adjust_height_relative(height: int, relativity: float) -> int:
+    usable_height = get_usable_height(height)
+    return limit_height(int(usable_height * relativity), height)
 
 
 @unique
@@ -46,7 +55,7 @@ class MainMenu:
         self._title = "Bank Statement Wizard"
         self._subtitle = "Developed by Emre Ay"
         self._header = "Press ESC to exit"
-        self._footer = ""
+        self._footer = "INFO: "
         self._key_stroked = 0
         self._exit_key = 27
 
@@ -56,9 +65,9 @@ class MainMenu:
 
     def _initialize_colors(self):
         curses.init_pair(ColorPair.title, curses.COLOR_GREEN, curses.COLOR_BLACK)
-        curses.init_pair(ColorPair.subtitle, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-        curses.init_pair(ColorPair.header, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-        curses.init_pair(ColorPair.footer, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+        curses.init_pair(ColorPair.subtitle, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(ColorPair.header, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(ColorPair.footer, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(ColorPair.regular, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     def _set_info(self, width: int):
@@ -68,8 +77,6 @@ class MainMenu:
         self._footer_str = self._footer[:width-1]
 
     def _render(self, width: int, height: int):
-        center_y = adjust_height_center(height)
-
         self._main_window.addstr(0, 0, self._header_str, curses.color_pair(ColorPair.header))
 
         # Render status bar
@@ -78,9 +85,13 @@ class MainMenu:
             self._main_window.addstr(height - 1, len(self._footer_str), " " * (width - len(self._footer_str) - 1))
 
         with attributes(curses.color_pair(ColorPair.title), curses.A_BOLD, window=self._main_window):
-            self._main_window.addstr(center_y, adjust_width_center(self._title_str, width), self._title_str)
+            title_y = adjust_height_relative(height, 0.5)
+            title_x = adjust_width_relative(self._title_str, width, 0.5)
+            self._main_window.addstr(title_y, title_x, self._title_str)
 
-        self._main_window.addstr(center_y + 1, adjust_width_center(self._subtitle_str, width), self._subtitle_str)
+        sub_title_y = title_y + 1
+        sub_title_x = adjust_width_relative(self._subtitle_str, width, 0.5)
+        self._main_window.addstr(sub_title_y, sub_title_x, self._subtitle_str)
 
     def __call__(self, main_window: curses.window, *args, **kwargs):
         self._main_window = main_window
