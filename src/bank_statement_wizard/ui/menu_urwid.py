@@ -25,7 +25,7 @@ PALETTE = [
     ("edit", "light gray", "dark blue"),
     ("title", "white", "black"),
     ("chars", "light gray", "black"),
-    ("exit", "white", "dark cyan")
+    ("exit", "white", "dark blue")
 ]
 
 
@@ -33,21 +33,49 @@ PALETTE = [
 class BankStatementWizardView:
     main_view: Optional[urwid.Widget] = None
     exit_view: Optional[urwid.Widget] = None
+
     title: Optional[urwid.Widget] = None
-    exit_text: Optional[urwid.Widget] = None
     header: Optional[urwid.Widget] = None
+    exit_text: Optional[urwid.Widget] = None
+
+    add_statement_button: Optional[urwid.Widget] = None
+    filter_button: Optional[urwid.Widget] = None
+    plot_button: Optional[urwid.Widget] = None
+    export_button: Optional[urwid.Widget] = None
+    search_button: Optional[urwid.Widget] = None
+    go_to_button: Optional[urwid.Widget] = None
+    menu: Optional[urwid.Widget] = None
 
     def setup(self):
         big_font = urwid.font.HalfBlock5x4Font()
+
         self.title = urwid.BigText("Bank Statement Wizard", big_font)
+
         self.header = urwid.Text("Press ESC to exit")
         self.header = urwid.AttrWrap(self.header, "header")
+
+        self.add_statement_button = urwid.Button(label="Add Statement")
+        self.filter_button = urwid.Button(label="Filter Menu")
+        self.plot_button = urwid.Button(label="Plot Menu")
+        self.export_button = urwid.Button(label="Export Menu")
+        self.search_button = urwid.Button(label="Search")
+        self.go_to_button = urwid.Button(label="Go To...")
+
+        self.menu = urwid.Columns([
+            self.add_statement_button,
+            self.filter_button,
+            self.plot_button,
+            self.export_button,
+            self.search_button,
+            self.go_to_button,
+        ])
+        self.menu = urwid.AttrMap(self.menu, "button normal")
 
         self.main_view = SwitchingPadding(self.title, "center", None)
         self.main_view = urwid.Filler(self.main_view, "middle")
         self.main_view = urwid.BoxAdapter(self.main_view, 7)
         self.main_view = urwid.AttrMap(self.main_view, "title")
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.main_view]))
+        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.main_view, self.menu]))
         self.main_view = urwid.Frame(header=self.header, body=self.main_view)
         self.main_view = urwid.AttrWrap(self.main_view, "body")
 
