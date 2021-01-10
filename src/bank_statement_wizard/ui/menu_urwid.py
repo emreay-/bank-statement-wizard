@@ -1,6 +1,6 @@
 from functools import wraps
-from dataclasses import dataclass
-from typing import Optional, Callable
+from dataclasses import dataclass, field
+from typing import Optional, Callable, List
 
 import urwid
 import urwid.raw_display
@@ -31,6 +31,41 @@ PALETTE = [
 
 
 @dataclass
+class WrappedButton:
+    name: str
+    widget: urwid.Button
+    key_short_cut: str
+    callback: Optional[Callable] = None
+
+    def set_callback(self, on_press: Callable) -> "WrappedButton":
+        self.callback = on_press
+        urwid.connect_signal(self.widget, "click", self.callback)
+        return self
+
+
+@dataclass
+class TopMenu:
+    buttons: List[WrappedButton] = field(default_factory=list)
+    handler: Optional[urwid.Columns] = None
+
+    def __getattr__(self, item) -> WrappedButton:
+        for b in self.buttons:
+            if b.name == item:
+                return b
+
+    @staticmethod
+    def default() -> "TopMenu":
+        top_menu = TopMenu()
+        for (label, key) in [("Statements Menu", "f2"), ("Filter Menu", "f3"), ("Plot Menu", "f4"),
+                             ("Export Menu", "f5"), ("Search", "f6"), ("Go To...", "f7"), ("Done", "f8")]:
+            name = "".join([i.lower() for i in label.replace(" ", "_") if i.isalpha() or i == "_"])
+            name = f"{name}_button"
+            top_menu.buttons.append(WrappedButton(name=name, widget=urwid.Button(label), key_short_cut=key))
+        top_menu.handler = urwid.Columns([b.widget for b in top_menu.buttons])
+        return top_menu
+
+
+@dataclass
 class BankStatementWizardView:
     main_view: Optional[urwid.Widget] = None
 
@@ -49,7 +84,7 @@ class BankStatementWizardView:
     search_button: Optional[urwid.Widget] = None
     go_to_button: Optional[urwid.Widget] = None
     done_button: Optional[urwid.Widget] = None
-    menu: Optional[urwid.Widget] = None
+    menu: Optional[TopMenu] = None
 
     def setup(self,
               statements_button_callback: Callable,
@@ -70,24 +105,15 @@ class BankStatementWizardView:
         self.header = urwid.Text("Press ESC to exit")
         self.header = urwid.AttrWrap(self.header, "header")
 
-        self.statements_button = urwid.Button(label="Statements Menu (F2)", on_press=statements_button_callback)
-        self.filter_button = urwid.Button(label="Filter Menu (F3)", on_press=filter_button_callback)
-        self.plot_button = urwid.Button(label="Plot Menu (F4)", on_press=plot_button_callback)
-        self.export_button = urwid.Button(label="Export Menu (F5)", on_press=export_button_callback)
-        self.search_button = urwid.Button(label="Search (F6)", on_press=search_button_callback)
-        self.go_to_button = urwid.Button(label="Go To... (F7)", on_press=go_to_button_callback)
-        self.done_button = urwid.Button(label="Done (F8)", on_press=done_button_callback)
-
-        self.menu = urwid.Columns([
-            self.statements_button,
-            self.filter_button,
-            self.plot_button,
-            self.export_button,
-            self.search_button,
-            self.go_to_button,
-            self.done_button,
-        ])
-        self.menu = urwid.AttrMap(self.menu, "button normal")
+        self.menu = TopMenu.default()
+        self.menu.statements_menu_button.set_callback(statements_button_callback)
+        self.menu.filter_menu_button.set_callback(filter_button_callback)
+        self.menu.plot_menu_button.set_callback(plot_button_callback)
+        self.menu.export_menu_button.set_callback(export_button_callback)
+        self.menu.search_button.set_callback(search_button_callback)
+        self.menu.go_to_button.set_callback(go_to_button_callback)
+        self.menu.done_button.set_callback(done_button_callback)
+        self.menu.handler = urwid.AttrMap(self.menu.handler, "button normal")
 
         self.set_to_default_view()
 
@@ -99,22 +125,22 @@ class BankStatementWizardView:
         self.main_view = urwid.AttrWrap(self.main_view, "body")
 
     def set_to_default_view(self):
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu]))
+        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler]))
         self.set_frame()
 
     def set_to_statements_menu(self):
         _text = urwid.Text("Statements Options")
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu, _text]))
+        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler, _text]))
         self.set_frame()
 
     def set_to_filter_menu(self):
         _text = urwid.Text("Filter Options")
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu, _text]))
+        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler, _text]))
         self.set_frame()
 
     def set_to_plot_menu(self):
         _text = urwid.Text("Plot Options")
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu, _text]))
+        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler, _text]))
         self.set_frame()
 
 
@@ -183,20 +209,9 @@ class BankStatementWizardApp:
                 self._loop.widget = self._view.exit_view
                 return True
 
-        if key == "f2":
-            self._statements_button_callback(self._view.statements_button)
-        if key == "f3":
-            self._filter_button_callback(self._view.filter_button)
-        if key == "f4":
-            self._plot_button_callback(self._view.plot_button)
-        if key == "f5":
-            self._export_button_callback(self._view.export_button)
-        if key == "f6":
-            self._search_button_callback(self._view.search_button)
-        if key == "f7":
-            self._go_to_button_callback(self._view.go_to_button)
-        if key == "f8":
-            self._done_button_callback(self._view.done_button)
+        for button in self._view.menu.buttons:
+            if key == button.key_short_cut:
+                button.callback(button.widget)
 
     def run(self):
         self._loop.run()
