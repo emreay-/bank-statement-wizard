@@ -35,12 +35,13 @@ class WrappedButton:
     name: str
     widget: urwid.Button
     key_short_cut: str
-    callback: Optional[Callable] = None
 
     def set_callback(self, on_press: Callable) -> "WrappedButton":
-        self.callback = on_press
-        urwid.connect_signal(self.widget, "click", self.callback)
+        urwid.connect_signal(self.widget.original_widget, "click", on_press)
         return self
+
+    def activate(self):
+        self.widget.original_widget.mouse_event(None, "mouse press", 1, 4, 0, True)
 
 
 @dataclass
@@ -60,7 +61,9 @@ class TopMenu:
                              ("Export Menu", "f5"), ("Search", "f6"), ("Go To...", "f7"), ("Done", "f8")]:
             name = "".join([i.lower() for i in label.replace(" ", "_") if i.isalpha() or i == "_"])
             name = f"{name}_button"
-            top_menu.buttons.append(WrappedButton(name=name, widget=urwid.Button(label), key_short_cut=key))
+            button = urwid.Button(label)
+            button = urwid.AttrMap(button, "button normal", "button select")
+            top_menu.buttons.append(WrappedButton(name=name, widget=button, key_short_cut=key))
         top_menu.handler = urwid.Columns([b.widget for b in top_menu.buttons])
         return top_menu
 
@@ -77,13 +80,6 @@ class BankStatementWizardView:
     exit_text: Optional[urwid.Widget] = None
     exit_view: Optional[urwid.Widget] = None
 
-    statements_button: Optional[urwid.Widget] = None
-    filter_button: Optional[urwid.Widget] = None
-    plot_button: Optional[urwid.Widget] = None
-    export_button: Optional[urwid.Widget] = None
-    search_button: Optional[urwid.Widget] = None
-    go_to_button: Optional[urwid.Widget] = None
-    done_button: Optional[urwid.Widget] = None
     menu: Optional[TopMenu] = None
 
     def setup(self,
@@ -211,7 +207,7 @@ class BankStatementWizardApp:
 
         for button in self._view.menu.buttons:
             if key == button.key_short_cut:
-                button.callback(button.widget)
+                button.activate()
 
     def run(self):
         self._loop.run()
