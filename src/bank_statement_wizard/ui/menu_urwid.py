@@ -1,10 +1,9 @@
-from functools import wraps
-from dataclasses import dataclass, field
-from typing import Optional, Callable, List
+import weakref
+from dataclasses import dataclass
+from typing import Optional, Callable, Dict, Tuple, cast
 
 import urwid
 import urwid.raw_display
-
 
 __all__ = ["run_ui"]
 
@@ -31,186 +30,197 @@ PALETTE = [
 
 
 @dataclass
-class WrappedButton:
-    name: str
-    widget: urwid.Button
+class TopMenuButton:
+    widget: "PopUpWrapper"
     key_short_cut: str
 
-    def set_callback(self, on_press: Callable) -> "WrappedButton":
-        urwid.connect_signal(self.widget.original_widget, "click", on_press)
+    def __getattr__(self, name) -> urwid.Widget:
+        w = self.widget
+        while True:
+            if isinstance(w, urwid.PopUpLauncher) and name == "pop_up_launcher":
+                break
+            if isinstance(w, urwid.Button) and name == "button":
+                break
+            if hasattr(w, "original_widget"):
+                w = w.original_widget
+            else:
+                raise ValueError(f"Cannot get {name} attribute for {self.__class__.__name__}")
+        return w
+
+    def set_pop_up_callback(self, callback: Callable) -> "TopMenuButton":
+        urwid.connect_signal(self.button, "click", lambda w: self.pop_up_launcher.open_pop_up())
+        self.pop_up_launcher.callback = callback
         return self
 
     def activate(self):
-        self.widget.original_widget.mouse_event(None, "mouse press", 1, 4, 0, True)
-
-
-@dataclass
-class TopMenu:
-    buttons: List[WrappedButton] = field(default_factory=list)
-    handler: Optional[urwid.Columns] = None
-
-    def __getattr__(self, item) -> WrappedButton:
-        for b in self.buttons:
-            if b.name == item:
-                return b
+        self.button.mouse_event(None, "mouse press", 1, 4, 0, True)
 
     @staticmethod
-    def default() -> "TopMenu":
-        top_menu = TopMenu()
-        for (label, key) in [("Statements Menu", "f2"), ("Filter Menu", "f3"), ("Plot Menu", "f4"),
-                             ("Export Menu", "f5"), ("Search", "f6"), ("Go To...", "f7"), ("Done", "f8")]:
-            name = "".join([i.lower() for i in label.replace(" ", "_") if i.isalpha() or i == "_"])
-            name = f"{name}_button"
-            button = urwid.Button(label)
-            button = urwid.AttrMap(button, "button normal", "button select")
-            top_menu.buttons.append(WrappedButton(name=name, widget=button, key_short_cut=key))
-        top_menu.handler = urwid.Columns([b.widget for b in top_menu.buttons])
-        return top_menu
+    def from_label_and_key(label: str, key: str) -> "TopMenuButton":
+        label = f"{label} ({key.title()})"
+        button = PopUpWrapper(urwid.Button(label))
+        button = urwid.AttrMap(button, "button normal", "button select")
+        return TopMenuButton(widget=button, key_short_cut=key)
 
 
-@dataclass
-class BankStatementWizardView:
-    main_view: Optional[urwid.Widget] = None
+class PopUpMixin:
+    def attach(self, launcher: urwid.PopUpLauncher):
+        urwid.connect_signal(self, 'close', lambda button: launcher.close_pop_up())
 
-    header: Optional[urwid.Widget] = None
+    def launch(self, launcher: urwid.PopUpLauncher):
+        self.attach(launcher)
+        return self
 
-    title_text: Optional[urwid.Widget] = None
-    title: Optional[urwid.Widget] = None
 
-    exit_text: Optional[urwid.Widget] = None
-    exit_view: Optional[urwid.Widget] = None
+class StatementsMenu(urwid.WidgetWrap, PopUpMixin):
+    signals = ["close"]
 
-    menu: Optional[TopMenu] = None
+    def __init__(self, parent: weakref.ref):
+        self.parent = parent
+        add_statement_button = urwid.Button("Add Statement", self._add_statement)
+        remove_statement_button = urwid.Button("Remove Statement")
+        done_button = urwid.Button("Done", lambda _: self._emit("close"))
+        pile = urwid.Pile([add_statement_button, remove_statement_button, done_button])
+        fill = urwid.AttrMap(urwid.Filler(pile), "chars")
+        super().__init__(fill)
 
-    def setup(self,
-              statements_button_callback: Callable,
-              filter_button_callback: Callable,
-              plot_button_callback: Callable,
-              export_button_callback: Callable,
-              search_button_callback: Callable,
-              go_to_button_callback: Callable,
-              done_button_callback: Callable):
-        big_font = urwid.font.HalfBlock5x4Font()
+    def _add_statement(self, _):
+        parent = self.parent()
+        body = [urwid.Text("Add Statement"), urwid.Divider(), urwid.Button("Statement Type"), urwid.Button("Browse"),
+                urwid.Button("Done")]
+        w = urwid.LineBox(urwid.ListBox(urwid.SimpleFocusListWalker(body)))
+        w = urwid.Overlay(w, urwid.SolidFill("-"), align='center', width=('relative', 80),
+                          valign='middle', height=('relative', 80), min_width=24, min_height=8)
+        parent.loop.widget = w
 
-        self.title_text = urwid.BigText("Bank Statement Wizard", big_font)
+
+class PopUpWrapper(urwid.PopUpLauncher):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.callback: Optional[Callable[["PopUpWrapper"], urwid.Widget]] = None
+        self.parameters: Dict = {'left': 0, 'top': 1, 'overlay_width': 32, 'overlay_height': 7}
+
+    def create_pop_up(self):
+        if not self.callback:
+            raise ValueError(f"Pop up wrapped was not set")
+        return self.callback(self)
+
+    def get_pop_up_parameters(self):
+        return self.parameters
+
+
+BIG_TEXT_FONT = urwid.font.HalfBlock5x4Font()
+
+
+class BankStatementWizardApp:
+    def __init__(self):
+        self.main_view: Optional[urwid.Widget] = None
+
+        self.header: Optional[urwid.Widget] = None
+
+        self.title_text: Optional[urwid.Widget] = None
+        self.title: Optional[urwid.Widget] = None
+
+        self.exit_text: Optional[urwid.Widget] = None
+        self.exit_view: Optional[urwid.Widget] = None
+
+        self.statements_menu_button: Optional[TopMenuButton] = None
+        self.filter_menu_button: Optional[TopMenuButton] = None
+        self.plot_menu_button: Optional[TopMenuButton] = None
+        self.export_menu_button: Optional[TopMenuButton] = None
+        self.search_button: Optional[TopMenuButton] = None
+        self.go_to_button: Optional[TopMenuButton] = None
+        self.done_button: Optional[TopMenuButton] = None
+        self.top_menu_columns: Optional[urwid.Widget] = None
+
+        self.setup()
+        self.loop = urwid.MainLoop(self.main_view, PALETTE, unhandled_input=self.unhandled_input, pop_ups=True)
+        self.is_quitting: bool = False
+
+    def setup(self):
+        self.create_title_widgets()
+        self.create_top_menu_widgets()
+        self.create_main_view_widgets()
+        self.create_exit_view_widgets()
+
+    def unhandled_input(self, key):
+        if self.is_quitting:
+            if key == "enter":
+                raise urwid.ExitMainLoop()
+            if key == "esc":
+                self.is_quitting = False
+                self.loop.widget = self.main_view
+                return True
+        else:
+            if key == "esc":
+                self.is_quitting = True
+                self.loop.widget = self.exit_view
+                return True
+
+        for button in self.menu_buttons:
+            if key == button.key_short_cut:
+                button.activate()
+
+    def run(self):
+        self.loop.run()
+
+    @property
+    def menu_buttons(self) -> Tuple[TopMenuButton]:
+        return cast(Tuple[TopMenuButton], (
+            self.statements_menu_button,
+            self.filter_menu_button,
+            self.plot_menu_button,
+            self.export_menu_button,
+            self.search_button,
+            self.go_to_button,
+            self.done_button,
+        ))
+
+    def create_title_widgets(self):
+        self.title_text = urwid.BigText("Bank Statement Wizard", BIG_TEXT_FONT)
         self.title = SwitchingPadding(self.title_text, "center", None)
         self.title = urwid.Filler(self.title, "middle")
         self.title = urwid.BoxAdapter(self.title, 7)
         self.title = urwid.AttrMap(self.title, "title")
 
+    def create_header_widgets(self):
         self.header = urwid.Text("Press ESC to exit")
         self.header = urwid.AttrWrap(self.header, "header")
 
-        self.menu = TopMenu.default()
-        self.menu.statements_menu_button.set_callback(statements_button_callback)
-        self.menu.filter_menu_button.set_callback(filter_button_callback)
-        self.menu.plot_menu_button.set_callback(plot_button_callback)
-        self.menu.export_menu_button.set_callback(export_button_callback)
-        self.menu.search_button.set_callback(search_button_callback)
-        self.menu.go_to_button.set_callback(go_to_button_callback)
-        self.menu.done_button.set_callback(done_button_callback)
-        self.menu.handler = urwid.AttrMap(self.menu.handler, "button normal")
-
-        self.set_to_default_view()
-
-        self.exit_text = urwid.BigText(("exit", " Quit? [ESC to cancel] "), big_font)
-        self.exit_view = urwid.Overlay(self.exit_text, self.main_view, "center", None, "middle", None)
-
-    def set_frame(self):
+    def create_main_view_widgets(self):
+        self.main_view = urwid.ListBox(
+            urwid.SimpleListWalker([self.title, self.top_menu_columns]))
         self.main_view = urwid.Frame(header=self.header, body=self.main_view)
         self.main_view = urwid.AttrWrap(self.main_view, "body")
 
-    def set_to_default_view(self):
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler]))
-        self.set_frame()
+    def create_exit_view_widgets(self):
+        self.exit_text = urwid.BigText(("exit", " Quit? [ESC to cancel] "), BIG_TEXT_FONT)
+        self.exit_view = urwid.Overlay(self.exit_text, self.main_view, "center", None, "middle", None)
 
-    def set_to_statements_menu(self):
-        _text = urwid.Text("Statements Options")
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler, _text]))
-        self.set_frame()
+    def create_top_menu_widgets(self):
+        self.statements_menu_button = TopMenuButton.from_label_and_key("Statements Menu", "f2")
+        statements_menu = StatementsMenu(parent=weakref.ref(self))
+        self.statements_menu_button.set_pop_up_callback(statements_menu.launch)
 
-    def set_to_filter_menu(self):
-        _text = urwid.Text("Filter Options")
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler, _text]))
-        self.set_frame()
+        self.filter_menu_button = TopMenuButton.from_label_and_key("Filter Menu", "f3")
+        self.plot_menu_button = TopMenuButton.from_label_and_key("Plot Menu", "f4")
+        self.export_menu_button = TopMenuButton.from_label_and_key("Export Menu", "f5")
+        self.search_button = TopMenuButton.from_label_and_key("Search", "f6")
+        self.go_to_button = TopMenuButton.from_label_and_key("Go To...", "f7")
+        self.done_button = TopMenuButton.from_label_and_key("Done", "f8")
+        self.top_menu_columns = urwid.Columns([i.widget for i in self.menu_buttons])
+        self.top_menu_columns = urwid.AttrMap(self.top_menu_columns, "button normal")
 
-    def set_to_plot_menu(self):
-        _text = urwid.Text("Plot Options")
-        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.menu.handler, _text]))
-        self.set_frame()
-
-
-def _update_loop_widget(f):
-    @wraps(f)
-    def _wrapped(instance: "BankStatementWizardApp", *args, **kwargs):
-        f(instance, *args, **kwargs)
-        instance._loop.widget = instance._view.main_view
-    return _wrapped
-
-
-class BankStatementWizardApp:
-    def __init__(self):
-        self._view = BankStatementWizardView()
-        self._view.setup(
-            self._statements_button_callback,
-            self._filter_button_callback,
-            self._plot_button_callback,
-            self._export_button_callback,
-            self._search_button_callback,
-            self._go_to_button_callback,
-            self._done_button_callback
-        )
-        self._loop = urwid.MainLoop(self._view.main_view, PALETTE, unhandled_input=self._unhandled_input)
-        self._is_quitting: bool = False
-
-    @_update_loop_widget
-    def _statements_button_callback(self, widget: urwid.Widget):
-        self._view.set_to_statements_menu()
-
-    @_update_loop_widget
-    def _filter_button_callback(self, widget: urwid.Widget):
-        self._view.set_to_filter_menu()
-
-    @_update_loop_widget
-    def _plot_button_callback(self,  _):
-        self._view.set_to_plot_menu()
-
-    @_update_loop_widget
-    def _export_button_callback(self, widget: urwid.Widget):
-        pass
-
-    @_update_loop_widget
-    def _search_button_callback(self, widget: urwid.Widget):
-        pass
-
-    @_update_loop_widget
-    def _go_to_button_callback(self, widget: urwid.Widget):
-        pass
-
-    @_update_loop_widget
-    def _done_button_callback(self, widget: urwid.Widget):
-        self._view.set_to_default_view()
-
-    def _unhandled_input(self, key):
-        if self._is_quitting:
-            if key == "enter":
-                raise urwid.ExitMainLoop()
-            if key == "esc":
-                self._is_quitting = False
-                self._loop.widget = self._view.main_view
-                return True
+    def set_frame(self):
+        if self.main_view:
+            try:
+                self.main_view = urwid.ListBox(
+                    urwid.SimpleListWalker([self.title, self.top_menu_columns, *self.main_view.body]))
+            except AttributeError:
+                pass
         else:
-            if key == "esc":
-                self._is_quitting = True
-                self._loop.widget = self._view.exit_view
-                return True
-
-        for button in self._view.menu.buttons:
-            if key == button.key_short_cut:
-                button.activate()
-
-    def run(self):
-        self._loop.run()
+            self.main_view = urwid.ListBox(
+                urwid.SimpleListWalker([self.title, self.top_menu_columns]))
 
 
 def run_ui():
