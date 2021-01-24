@@ -5,6 +5,8 @@ from typing import Optional, Callable, Dict, Tuple, cast
 import urwid
 import urwid.raw_display
 
+from .file_selector import FileSelector
+
 __all__ = ["run_ui"]
 
 
@@ -107,12 +109,18 @@ class StatementsMenu:
 
     def _add_statement(self, _):
         statement_type_button = urwid.Button("Statement Type")
-        browse_button = urwid.Button("Browse")
+        browse_button = urwid.Button("Browse", self._browse_statement)
         done_button = urwid.Button("Done", lambda i: self.launch(i))
         self._set_loop_widget(
             create_overlay(create_line_box(urwid.Text("Add Statement"), urwid.Divider("_", 0, 1),
                                            statement_type_button, browse_button, done_button))
         )
+
+    def _browse_statement(self, _):
+        def _cb(path: str):
+            self._reset_loop_widget()
+        browser = FileSelector(on_selected=_cb)
+        self._set_loop_widget(create_overlay(browser.view))
 
     def _set_loop_widget(self, widget: urwid.Widget):
         self.parent().loop.widget = widget
