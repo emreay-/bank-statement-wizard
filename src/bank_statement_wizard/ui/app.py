@@ -6,6 +6,7 @@ import urwid.raw_display
 
 from .utility import *
 from .file_selector import FileSelector
+from .model import BankStatementWizardModel
 
 __all__ = ["run_ui"]
 
@@ -21,6 +22,9 @@ PALETTE = [
     ("chars", "light gray", "black"),
     ("exit", "white", "dark blue")
 ]
+
+
+MODEL = BankStatementWizardModel()
 
 
 class StatementsMenu:
@@ -46,6 +50,7 @@ class StatementsMenu:
 
     def _browse_statement(self, _):
         def _cb(path: str):
+            MODEL.add_statement(path)
             self._reset_loop_widget()
         browser = FileSelector(on_selected=_cb)
         self._set_loop_widget(create_overlay(browser.view))
@@ -54,8 +59,7 @@ class StatementsMenu:
         self.parent().loop.widget = widget
 
     def _reset_loop_widget(self):
-        parent = self.parent()
-        parent.loop.widget = parent.main_view
+        self.parent().reset_to_main_view()
 
 
 class BankStatementWizardApp:
@@ -167,6 +171,9 @@ class BankStatementWizardApp:
         else:
             self.main_view = urwid.ListBox(
                 urwid.SimpleListWalker([self.title, self.top_menu_columns]))
+
+    def reset_to_main_view(self):
+        self.loop.widget = self.main_view
 
 
 def run_ui():
