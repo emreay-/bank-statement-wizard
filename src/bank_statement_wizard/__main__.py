@@ -1,6 +1,7 @@
 import argparse
 from typing import List
 
+from bank_statement_wizard.ui import run_ui
 from bank_statement_wizard.domain.ledger import Ledger
 from bank_statement_wizard.domain.utility import load_category_data, check_date
 from bank_statement_wizard.domain.analysis import SimpleExpenseCategoryMatcher, \
@@ -62,4 +63,5 @@ def process_statement(
 
 
 def main():
-    process_statement(*parse_arguments())
+    # process_statement(*parse_arguments())
+    run_ui()

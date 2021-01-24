@@ -9,6 +9,10 @@ class SupportedStatementTypes(Enum):
     LloydsBankUKCurrentAccountStatement = "lloyds-debit"
     LloydsBankUKCreditCardStatement = "lloyds-credit"
 
+    @staticmethod
+    def default() -> "SupportedStatementTypes":
+        return SupportedStatementTypes.LloydsBankUKCurrentAccountStatement
+
 
 def statement_types() -> List[str]:
     return [_type.value for _type in SupportedStatementTypes]
