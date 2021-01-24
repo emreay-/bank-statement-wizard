@@ -31,7 +31,7 @@ PALETTE = [
 
 @dataclass
 class TopMenuButton:
-    widget: "PopUpWrapper"
+    widget: urwid.Widget
     key_short_cut: str
 
     def __getattr__(self, name) -> urwid.Widget:
@@ -52,13 +52,17 @@ class TopMenuButton:
         self.pop_up_launcher.callback = callback
         return self
 
+    def set_button_callback(self, callback: Callable) -> "TopMenuButton":
+        urwid.connect_signal(self.button, "click", callback)
+        return self
+
     def activate(self):
         self.button.mouse_event(None, "mouse press", 1, 4, 0, True)
 
     @staticmethod
     def from_label_and_key(label: str, key: str) -> "TopMenuButton":
         label = f"{label} ({key.title()})"
-        button = PopUpWrapper(urwid.Button(label))
+        button = urwid.Button(label)
         button = urwid.AttrMap(button, "button normal", "button select")
         return TopMenuButton(widget=button, key_short_cut=key)
 
@@ -72,26 +76,50 @@ class PopUpMixin:
         return self
 
 
-class StatementsMenu(urwid.WidgetWrap, PopUpMixin):
-    signals = ["close"]
+def create_line_box(*widgets) -> urwid.LineBox:
+    body = list(widgets)
+    return urwid.LineBox(urwid.ListBox(urwid.SimpleFocusListWalker(body)))
 
+
+def create_box(*widgets) -> urwid.Filler:
+    body = list(widgets)
+    return urwid.Filler(urwid.Pile(body))
+
+
+def create_overlay(widget: urwid.Widget, background: str = " ", **kwargs):
+    _kwargs = dict(align="center", width=("relative", 80), valign="middle",
+                   height=("relative", 80), min_width=24, min_height=8)
+    _kwargs.update(kwargs)
+    return urwid.Overlay(widget, urwid.SolidFill(background), **_kwargs)
+
+
+class StatementsMenu:
     def __init__(self, parent: weakref.ref):
         self.parent = parent
+
+    def launch(self, _: urwid.Widget):
         add_statement_button = urwid.Button("Add Statement", self._add_statement)
         remove_statement_button = urwid.Button("Remove Statement")
-        done_button = urwid.Button("Done", lambda _: self._emit("close"))
-        pile = urwid.Pile([add_statement_button, remove_statement_button, done_button])
-        fill = urwid.AttrMap(urwid.Filler(pile), "chars")
-        super().__init__(fill)
+        done_button = urwid.Button("Done", lambda _: self._reset_loop_widget())
+        self._set_loop_widget(
+            create_overlay(create_line_box(urwid.Text("Statements Menu"), urwid.Divider("_", 0, 1),
+                                           add_statement_button, remove_statement_button, done_button)))
 
     def _add_statement(self, _):
+        statement_type_button = urwid.Button("Statement Type")
+        browse_button = urwid.Button("Browse")
+        done_button = urwid.Button("Done", lambda i: self.launch(i))
+        self._set_loop_widget(
+            create_overlay(create_line_box(urwid.Text("Add Statement"), urwid.Divider("_", 0, 1),
+                                           statement_type_button, browse_button, done_button))
+        )
+
+    def _set_loop_widget(self, widget: urwid.Widget):
+        self.parent().loop.widget = widget
+
+    def _reset_loop_widget(self):
         parent = self.parent()
-        body = [urwid.Text("Add Statement"), urwid.Divider(), urwid.Button("Statement Type"), urwid.Button("Browse"),
-                urwid.Button("Done")]
-        w = urwid.LineBox(urwid.ListBox(urwid.SimpleFocusListWalker(body)))
-        w = urwid.Overlay(w, urwid.SolidFill("-"), align='center', width=('relative', 80),
-                          valign='middle', height=('relative', 80), min_width=24, min_height=8)
-        parent.loop.widget = w
+        parent.loop.widget = parent.main_view
 
 
 class PopUpWrapper(urwid.PopUpLauncher):
@@ -200,7 +228,7 @@ class BankStatementWizardApp:
     def create_top_menu_widgets(self):
         self.statements_menu_button = TopMenuButton.from_label_and_key("Statements Menu", "f2")
         statements_menu = StatementsMenu(parent=weakref.ref(self))
-        self.statements_menu_button.set_pop_up_callback(statements_menu.launch)
+        self.statements_menu_button.set_button_callback(statements_menu.launch)
 
         self.filter_menu_button = TopMenuButton.from_label_and_key("Filter Menu", "f3")
         self.plot_menu_button = TopMenuButton.from_label_and_key("Plot Menu", "f4")
