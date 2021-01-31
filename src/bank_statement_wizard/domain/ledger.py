@@ -1,6 +1,6 @@
 import datetime
 
-from typing import List, Dict, Tuple, Optional, Any
+from typing import List, Optional, Any, Tuple, Dict
 from .date_range import DateRange, DateRangeElement, Inclusivity
 
 
@@ -32,6 +32,19 @@ class Transaction:
         self.description: str = description
         self.additional_info: str = additional_info
         self.category: str = category
+
+    @staticmethod
+    def fields() -> Tuple[str, ...]:
+        return "date", "description", "amount", "info", "category"
+
+    def dict(self) -> Dict[str, Any]:
+        return {
+            "date": self.date,
+            "description": self.description,
+            "amount": self.amount,
+            "info": self.additional_info,
+            "category": self.category,
+        }
 
     def __str__(self):
         return f"Date                  : {self.date}" \
@@ -103,6 +116,9 @@ class Ledger:
         for t in transactions:
             self.add_transaction(t)
         return self
+
+    def __len__(self) -> int:
+        return len(self._debit_transactions) + len(self._credit_transactions)
 
     def __str__(self):
         return f"Credit Balance   : {self.credit_balance:.2f}\n" \

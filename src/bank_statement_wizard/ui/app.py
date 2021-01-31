@@ -2,11 +2,14 @@ import weakref
 from typing import Optional, Tuple, cast
 
 import urwid
+import panwid
 import urwid.raw_display
 
 from .utility import *
 from .file_selector import FileSelector
 from .model import BankStatementWizardModel
+from ..domain import Transaction
+from ..logging import get_logger
 
 __all__ = ["run_ui"]
 
@@ -25,6 +28,7 @@ PALETTE = [
 
 
 MODEL = BankStatementWizardModel()
+logger = get_logger()
 
 
 class StatementsMenu:
@@ -49,10 +53,10 @@ class StatementsMenu:
         )
 
     def _browse_statement(self, _):
-        def _cb(path: str):
+        def _on_selected_file(path: str):
             MODEL.add_statement(path)
             self._reset_loop_widget()
-        browser = FileSelector(on_selected=_cb)
+        browser = FileSelector(on_selected=_on_selected_file)
         self._set_loop_widget(create_overlay(browser.view))
 
     def _set_loop_widget(self, widget: urwid.Widget):
@@ -82,6 +86,8 @@ class BankStatementWizardApp:
         self.go_to_button: Optional[TopMenuButton] = None
         self.done_button: Optional[TopMenuButton] = None
         self.top_menu_columns: Optional[urwid.Widget] = None
+
+        self.table: Optional[urwid.Widget] = None
 
         self.setup()
         self.loop = urwid.MainLoop(self.main_view, PALETTE, unhandled_input=self.unhandled_input, pop_ups=True)
@@ -138,10 +144,7 @@ class BankStatementWizardApp:
         self.header = urwid.AttrWrap(self.header, "header")
 
     def create_main_view_widgets(self):
-        self.main_view = urwid.ListBox(
-            urwid.SimpleListWalker([self.title, self.top_menu_columns]))
-        self.main_view = urwid.Frame(header=self.header, body=self.main_view)
-        self.main_view = urwid.AttrWrap(self.main_view, "body")
+        self.set_main_view()
 
     def create_exit_view_widgets(self):
         self.exit_text = urwid.BigText(("exit", " Quit? [ESC to cancel] "), BIG_TEXT_FONT)
@@ -161,18 +164,31 @@ class BankStatementWizardApp:
         self.top_menu_columns = urwid.Columns([i.widget for i in self.menu_buttons])
         self.top_menu_columns = urwid.AttrMap(self.top_menu_columns, "button normal")
 
-    def set_frame(self):
-        if self.main_view:
-            try:
-                self.main_view = urwid.ListBox(
-                    urwid.SimpleListWalker([self.title, self.top_menu_columns, *self.main_view.body]))
-            except AttributeError:
-                pass
-        else:
-            self.main_view = urwid.ListBox(
-                urwid.SimpleListWalker([self.title, self.top_menu_columns]))
+    def set_main_view(self, *widgets):
+        self.main_view = urwid.ListBox(urwid.SimpleListWalker([self.title, self.top_menu_columns, *widgets]))
+        self.main_view = urwid.Frame(header=self.header, body=self.main_view)
+        self.main_view = urwid.AttrWrap(self.main_view, "body")
+
+    def create_table_from_model(self):
+        logger.debug("Creating transactions table from the model")
+        fields = ("#", *Transaction.fields())
+        data = []
+        for i, t in enumerate(MODEL.ledger.transactions, 1):
+            _data = t.dict()
+            _data.update({"#": i})
+            data.append(_data)
+
+        self.table = panwid.datatable.DataTable(
+            columns=[panwid.datatable.DataTableColumn(i) for i in fields],
+            data=data
+        )
+        logger.debug(f"Created transactions table: {self.table}")
 
     def reset_to_main_view(self):
+        if self.table is None and MODEL.has_data:
+            self.create_table_from_model()
+        if self.table is not None:
+            self.set_main_view(urwid.BoxAdapter(self.table, 50))
         self.loop.widget = self.main_view
 
 

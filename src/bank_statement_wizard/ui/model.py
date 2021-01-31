@@ -18,12 +18,20 @@ class BankStatementWizardModel:
         self._ledger: Ledger = Ledger()
 
     @property
+    def has_data(self) -> bool:
+        return len(self._statements) > 0
+
+    @property
     def statements(self) -> List[str]:
         return deepcopy(self._statements)
 
     @property
     def ledger(self) -> Ledger:
         return deepcopy(self._ledger)
+
+    @property
+    def number_of_transactions(self) -> int:
+        return len(self._ledger)
 
     def add_statement(self, path: str, statement_type: SupportedStatementTypes = SupportedStatementTypes.default()):
         path = os.path.abspath(path)
