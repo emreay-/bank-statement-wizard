@@ -1,3 +1,4 @@
+import shutil
 import weakref
 from typing import Optional, Tuple, cast
 
@@ -74,6 +75,7 @@ class BankStatementWizardApp:
 
         self.title_text: Optional[urwid.Widget] = None
         self.title: Optional[urwid.Widget] = None
+        self.title_box_height: int = 5
 
         self.exit_text: Optional[urwid.Widget] = None
         self.exit_view: Optional[urwid.Widget] = None
@@ -136,7 +138,7 @@ class BankStatementWizardApp:
         self.title_text = urwid.BigText("Bank Statement Wizard", BIG_TEXT_FONT)
         self.title = SwitchingPadding(self.title_text, "center", None)
         self.title = urwid.Filler(self.title, "middle")
-        self.title = urwid.BoxAdapter(self.title, 7)
+        self.title = urwid.BoxAdapter(self.title, self.title_box_height)
         self.title = urwid.AttrMap(self.title, "title")
 
     def create_header_widgets(self):
@@ -188,7 +190,8 @@ class BankStatementWizardApp:
         if self.table is None and MODEL.has_data:
             self.create_table_from_model()
         if self.table is not None:
-            self.set_main_view(urwid.BoxAdapter(self.table, 50))
+            self.set_main_view(
+                urwid.BoxAdapter(self.table, shutil.get_terminal_size().lines - (self.title_box_height + 1)))
         self.loop.widget = self.main_view
 
 
