@@ -6,6 +6,7 @@ import urwid
 import panwid
 import urwid.raw_display
 
+from .palette import PALETTE
 from .utility import *
 from .file_selector import FileSelector
 from .model import BankStatementWizardModel
@@ -13,20 +14,6 @@ from ..domain import Transaction
 from ..logging import get_logger
 
 __all__ = ["run_ui"]
-
-
-PALETTE = [
-    ("body", "white", "", "standout"),
-    ("header", "white", "dark red", "bold"),
-    ("button normal", "light gray", "dark blue", "standout"),
-    ("button select", "white", "dark green"),
-    ("button disabled", "dark gray", "dark blue"),
-    ("edit", "light gray", "dark blue"),
-    ("title", "white", "black"),
-    ("chars", "light gray", "black"),
-    ("exit", "white", "dark blue")
-]
-
 
 MODEL = BankStatementWizardModel()
 logger = get_logger()

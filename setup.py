@@ -15,6 +15,7 @@ setup(
     install_requires=[
         "reportlab",
         "urwid",
+        "urwid-utils>=0.1.2",
         "panwid==v0.3.0.dev15",
     ]
 )
