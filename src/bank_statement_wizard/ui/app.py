@@ -6,6 +6,9 @@ import urwid
 import panwid
 import urwid.raw_display
 
+from matplotlib import pyplot as pl
+from matplotlib.dates import DateFormatter, MonthLocator, YearLocator
+
 from .palette import PALETTE
 from .utility import *
 from .ledger_table import LedgerTable
@@ -47,6 +50,34 @@ class StatementsMenu:
             self._reset_loop_widget()
         browser = FileSelector(on_selected=_on_selected_file)
         self._set_loop_widget(create_overlay(browser.view))
+
+    def _set_loop_widget(self, widget: urwid.Widget):
+        self.parent().loop.widget = widget
+
+    def _reset_loop_widget(self):
+        self.parent().reset_to_main_view()
+
+
+class PlotMenu:
+    def __init__(self, parent: weakref.ref):
+        self.parent = parent
+
+    def launch(self, _: urwid.Widget):
+        balance_plot_button = urwid.Button("Balance Plot", self._plot_balance)
+        done_button = urwid.Button("Done", lambda _: self._reset_loop_widget())
+        self._set_loop_widget(
+            create_overlay(create_line_box(urwid.Text("Plot Menu"), urwid.Divider("_", 0, 1),
+                                           balance_plot_button, done_button)))
+
+    def _plot_balance(self, _):
+        ax = pl.gca()
+        formatter = DateFormatter("%Y-%m-%d")
+        ax.xaxis.set_major_formatter(formatter)
+        ax.xaxis.set_major_locator(MonthLocator())
+        ax.xaxis.set_minor_locator(YearLocator())
+        pl.plot(*MODEL.balance_data)
+        pl.gcf().autofmt_xdate()
+        pl.show()
 
     def _set_loop_widget(self, widget: urwid.Widget):
         self.parent().loop.widget = widget
@@ -146,7 +177,11 @@ class BankStatementWizardApp:
         self.statements_menu_button.set_button_callback(statements_menu.launch)
 
         self.filter_menu_button = TopMenuButton.from_label_and_key("Filter Menu", "f3")
+
         self.plot_menu_button = TopMenuButton.from_label_and_key("Plot Menu", "f4")
+        plot_menu = PlotMenu(parent=weakref.ref(self))
+        self.plot_menu_button.set_button_callback(plot_menu.launch)
+
         self.export_menu_button = TopMenuButton.from_label_and_key("Export Menu", "f5")
         self.search_button = TopMenuButton.from_label_and_key("Search", "f6")
         self.go_to_button = TopMenuButton.from_label_and_key("Go To...", "f7")

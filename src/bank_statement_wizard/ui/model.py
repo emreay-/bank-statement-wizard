@@ -1,7 +1,8 @@
 import os
 import logging
-from typing import List, Dict
 from copy import deepcopy
+from datetime import date
+from typing import List, Dict, Tuple
 
 from ..domain import Ledger
 from ..parsing.support import get_loader, SupportedStatementTypes
@@ -46,3 +47,11 @@ class BankStatementWizardModel:
             transaction_data.update({"#": i})
             _data.append(transaction_data)
         return _data
+
+    @property
+    def balance_data(self) -> Tuple[List[date], List[float]]:
+        _date, _balance = [], []
+        for (_d, _state) in self.ledger.balance_history:
+            _date.append(_d)
+            _balance.append(_state.balance)
+        return _date, _balance
