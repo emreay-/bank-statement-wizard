@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import List
+from typing import List, Dict
 from copy import deepcopy
 
 from ..domain import Ledger
@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 class BankStatementWizardModel:
     def __init__(self):
         self._statements: List[str] = []
-        self._ledger: Ledger = Ledger()
+        self.ledger: Ledger = Ledger()
 
     @property
     def has_data(self) -> bool:
@@ -26,18 +26,23 @@ class BankStatementWizardModel:
         return deepcopy(self._statements)
 
     @property
-    def ledger(self) -> Ledger:
-        return deepcopy(self._ledger)
-
-    @property
     def number_of_transactions(self) -> int:
-        return len(self._ledger)
+        return len(self.ledger)
 
     def add_statement(self, path: str, statement_type: SupportedStatementTypes = SupportedStatementTypes.default()):
         path = os.path.abspath(path)
         try:
             transactions = get_loader(statement_type.value)(path)
-            self._ledger.add_transactions(transactions)
+            self.ledger.add_transactions(transactions)
         except Exception as e:
             _logger.error(f"Error while parsing {path}, cannot load transactions: {e}")
         self._statements.append(path)
+
+    @property
+    def data(self) -> List[Dict]:
+        _data = []
+        for i, t in enumerate(self.ledger.transactions, 1):
+            transaction_data = t.dict()
+            transaction_data.update({"#": i})
+            _data.append(transaction_data)
+        return _data

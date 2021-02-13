@@ -1,4 +1,5 @@
 import datetime
+from bisect import bisect_left
 
 from typing import List, Optional, Any, Tuple, Dict
 from .date_range import DateRange, DateRangeElement, Inclusivity
@@ -25,13 +26,15 @@ class Transaction:
         date: Optional[datetime.date] = None,
         description: Optional[str] = None,
         additional_info: Optional[Any] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
+        included: bool = True
     ):
         self.amount = amount
         self.date: datetime.date = date
         self.description: str = description
         self.additional_info: str = additional_info
         self.category: str = category
+        self.included: bool = included
 
     @staticmethod
     def fields() -> Tuple[str, ...]:
@@ -57,8 +60,7 @@ class Transaction:
 class Ledger:
     # https://en.wikipedia.org/wiki/Debits_and_credits#Terminology
     def __init__(self):
-        self._debit_transactions: List[Transaction] = []    # money spent/withdrawn
-        self._credit_transactions: List[Transaction] = []   # money deposited
+        self._transactions: List[Transaction] = []
         self._debit_balance: float = 0.0
         self._credit_balance: float = 0.0
         self._balance: float = 0.0
@@ -76,49 +78,54 @@ class Ledger:
         return self._credit_balance
 
     @property
-    def debit_transactions(self):
-        return self._debit_transactions
+    def debit_transactions(self) -> List[Transaction]:  # money spent/withdrawn
+        return [t for t in self.transactions if t.amount < 0]
 
     @property
-    def credit_transactions(self):
-        return self._credit_transactions
+    def credit_transactions(self) -> List[Transaction]:  # money deposited
+        return [t for t in self.transactions if t.amount > 0]
 
     @property
     def transactions(self) -> List[Transaction]:
-        return sorted(self._debit_transactions + self._credit_transactions, key=lambda x: x.date)
+        return self._transactions
 
     @property
     def date_range(self) -> DateRange:
-        transactions = self.transactions
         return DateRange(
             start=DateRangeElement(
-                date=transactions[0].date,
+                date=self.transactions[0].date,
                 inclusivity=Inclusivity.closed
             ),
             end=DateRangeElement(
-                date=transactions[-1].date,
+                date=self.transactions[-1].date,
                 inclusivity=Inclusivity.closed
             ),
         )
 
     def add_transaction(self, transaction: Transaction) -> "Ledger":
+        self._transactions.append(transaction)
+        self._transactions.sort()
+
         if transaction.amount < 0.0:
-            self._debit_transactions.append(transaction)
             self._debit_balance += abs(transaction.amount)
         else:
-            self._credit_transactions.append(transaction)
             self._credit_balance += abs(transaction.amount)
-
         self._balance = self._credit_balance - self._debit_balance
+
         return self
 
     def add_transactions(self, transactions: List[Transaction]) -> "Ledger":
-        for t in transactions:
-            self.add_transaction(t)
+        self._transactions += transactions
+        self._transactions.sort()
+
+        self._debit_balance = sum(abs(i.amount) for i in self.debit_transactions)
+        self._credit_balance = sum(abs(i.amount) for i in self.credit_balance)
+        self._balance = self._credit_balance - self._debit_balance
+
         return self
 
     def __len__(self) -> int:
-        return len(self._debit_transactions) + len(self._credit_transactions)
+        return len(self._transactions)
 
     def __str__(self):
         return f"Credit Balance   : {self.credit_balance:.2f}\n" \

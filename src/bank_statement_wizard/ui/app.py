@@ -8,6 +8,7 @@ import urwid.raw_display
 
 from .palette import PALETTE
 from .utility import *
+from .ledger_table import LedgerTable
 from .file_selector import FileSelector
 from .model import BankStatementWizardModel
 from ..domain import Transaction
@@ -161,15 +162,11 @@ class BankStatementWizardApp:
     def create_table_from_model(self):
         logger.debug("Creating transactions table from the model")
         fields = ("#", *Transaction.fields())
-        data = []
-        for i, t in enumerate(MODEL.ledger.transactions, 1):
-            _data = t.dict()
-            _data.update({"#": i})
-            data.append(_data)
 
-        self.table = panwid.datatable.DataTable(
+        self.table = LedgerTable(
+            model=MODEL,
             columns=[panwid.datatable.DataTableColumn(i) for i in fields],
-            data=data
+            data=MODEL.data
         )
         logger.debug(f"Created transactions table: {self.table}")
 
