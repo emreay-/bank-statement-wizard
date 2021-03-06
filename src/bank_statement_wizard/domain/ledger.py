@@ -136,6 +136,15 @@ class Ledger:
             state = state.apply(t)
             self.balance_history.append((t.date, state))
 
+    def filtered_balance_history(self) -> List[Tuple[date, LedgerState]]:
+        filtered: List[Tuple[date, LedgerState]] = []
+        state = LedgerState()
+        for t in self.transactions:
+            if t.included:
+                state = state.apply(t)
+                filtered.append((t.date, state))
+        return filtered
+
     def __len__(self) -> int:
         return len(self.transactions)
 

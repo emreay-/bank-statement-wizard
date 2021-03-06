@@ -51,7 +51,7 @@ class BankStatementWizardModel:
     @property
     def balance_data(self) -> Tuple[List[date], List[float]]:
         _date, _balance = [], []
-        for (_d, _state) in self.ledger.balance_history:
+        for (_d, _state) in self.ledger.filtered_balance_history():
             _date.append(_d)
             _balance.append(_state.balance)
         return _date, _balance
