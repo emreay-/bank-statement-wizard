@@ -1,3 +1,4 @@
+from uuid import *
 from typing import List
 from datetime import date
 from bank_statement_wizard.domain import Ledger, Transaction, DateRange, DateRangeElement, Inclusivity
@@ -35,3 +36,9 @@ Debit Balance    : 1690.00
 Balance          : 847.00"""
 
     assert expected_str == str(ledger)
+
+
+def test_transaction_id():
+    assert Transaction(date=date(2018, 1, 1), amount=-100.5).id == uuid5(
+        Transaction._namespace, f"2018-01-01,None,-100.50,None"
+    )

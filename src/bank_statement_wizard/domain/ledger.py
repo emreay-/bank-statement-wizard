@@ -1,4 +1,5 @@
 from datetime import date
+from uuid import uuid5, UUID
 
 from typing import List, Optional, Any, Tuple, Dict
 from .date_range import DateRange, DateRangeElement, Inclusivity
@@ -7,31 +8,24 @@ from .date_range import DateRange, DateRangeElement, Inclusivity
 __all__ = ["Transaction", "Ledger"]
 
 
-# def categorize_transactions(transactions: List[Transaction]) -> Dict[str, List[Transaction]]:
-#     categorized_transactions = {}
-
-#     for t in transactions:
-#         if t.transaction_category not in categorized_transactions:
-#             categorized_transactions[t.transaction_category] = []
-#         categorized_transactions[t.transaction_category].append(t)
-
-#     return categorized_transactionsq
-
-
 class Transaction:
+    _namespace = UUID("e0505487-55f2-4b8c-9218-6fd03b87138b")
+
     def __init__(
         self,
         amount: float,
-        date: Optional[date] = None,
+        date: date,
         description: Optional[str] = None,
-        additional_info: Optional[Any] = None,
+        info: Optional[Any] = None,
         category: Optional[str] = None,
         included: bool = True
     ):
-        self.amount = amount
-        self.date: date = date
-        self.description: str = description
-        self.additional_info: str = additional_info
+        self._amount: float = amount
+        self._date: date = date
+        self._description: Optional[str] = description
+        self._info: Optional[str] = info
+        self._id: UUID = self._generate_id()
+
         self.category: str = category
         self.included: bool = included
 
@@ -39,21 +33,38 @@ class Transaction:
     def fields() -> Tuple[str, ...]:
         return "date", "description", "amount", "info", "category"
 
+    @property
+    def amount(self) -> float:
+        return self._amount
+
+    @property
+    def date(self) -> date:
+        return self._date
+
+    @property
+    def description(self) -> str:
+        return str(self._description)
+
+    @property
+    def info(self) -> str:
+        return str(self._info)
+
+    @property
+    def id(self) -> UUID:
+        return self._id
+
     def dict(self) -> Dict[str, Any]:
-        return {
-            "date": self.date,
-            "description": self.description,
-            "amount": self.amount,
-            "info": self.additional_info,
-            "category": self.category,
-        }
+        return {f: getattr(self, f) for f in self.fields}
 
     def __str__(self):
         return f"Date                  : {self.date}" \
                f"Amount                : {self.amount}" \
                f"Desc                  : {self.description}" \
-               f"Additional Info       : {self.additional_info}" \
+               f"Info                  : {self.info}" \
                f"Transaction Category  : {self.category}"
+
+    def _generate_id(self) -> UUID:
+        return uuid5(self._namespace, f"{self.date},{self.description},{self.amount:.2f},{self.info}")
 
 
 class LedgerState:

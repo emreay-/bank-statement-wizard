@@ -36,7 +36,7 @@ def current_account_statement_entry_to_transaction(entry: Dict) -> Transaction:
         amount=_amount,
         date=entry["transaction_date"],
         description=entry["transaction_description"],
-        additional_info=entry["transaction_type"],
+        info=entry["transaction_type"],
     )
 
 
@@ -72,7 +72,7 @@ def credit_card_statement_entry_to_transaction(entry: Dict) -> Transaction:
         amount=-1.0 * entry["amount"],
         date=entry["date"],
         description=entry["description"],
-        additional_info=entry["reference"],
+        info=entry["reference"],
     )
 
 
