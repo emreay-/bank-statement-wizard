@@ -1,6 +1,6 @@
 import shutil
 import weakref
-from typing import Optional, Tuple, cast
+from typing import Optional, Tuple, cast, List
 
 import urwid
 import panwid
@@ -50,6 +50,42 @@ class StatementsMenu:
             self._reset_loop_widget()
         browser = FileSelector(on_selected=_on_selected_file)
         self._set_loop_widget(create_overlay(browser.view))
+
+    def _set_loop_widget(self, widget: urwid.Widget):
+        self.parent().loop.widget = widget
+
+    def _reset_loop_widget(self):
+        self.parent().reset_to_main_view()
+
+
+class FilterMenu:
+    def __init__(self, parent: weakref.ref):
+        self.parent = parent
+
+    def launch(self, _: urwid.Widget):
+        reset_filters = urwid.Button("Reset Filters", self._reset_filters)
+        filter_selected = urwid.Button("Filter Selected Transactions", lambda _: self._filter_with_selection(True))
+        filter_unselected = urwid.Button("Filter Unselected Transactions", lambda _: self._filter_with_selection(False))
+        done_button = urwid.Button("Done", lambda _: self._reset_loop_widget())
+        self._set_loop_widget(
+            create_overlay(create_line_box(urwid.Text("Plot Menu"), urwid.Divider("_", 0, 1),
+                                           reset_filters, filter_selected, filter_unselected, done_button)))
+
+    def _apply_filters(self, filters: List):
+        parent = self.parent()
+        if parent.table is not None:
+            parent.table.apply_filters(filters)
+        self._reset_loop_widget()
+
+    def _reset_filters(self, _):
+        parent = self.parent()
+        if parent.table is not None:
+            parent.table.clear_filters()
+        self._reset_loop_widget()
+
+    def _filter_with_selection(self, is_selected: bool):
+        indices = [i["#"] for i in MODEL.get_transactions_based_on_selection(is_selected=is_selected)]
+        self._apply_filters([lambda x: x["#"] not in indices])
 
     def _set_loop_widget(self, widget: urwid.Widget):
         self.parent().loop.widget = widget
@@ -177,6 +213,8 @@ class BankStatementWizardApp:
         self.statements_menu_button.set_button_callback(statements_menu.launch)
 
         self.filter_menu_button = TopMenuButton.from_label_and_key("Filter Menu", "f3")
+        filter_menu = FilterMenu(parent=weakref.ref(self))
+        self.filter_menu_button.set_button_callback(filter_menu.launch)
 
         self.plot_menu_button = TopMenuButton.from_label_and_key("Plot Menu", "f4")
         plot_menu = PlotMenu(parent=weakref.ref(self))

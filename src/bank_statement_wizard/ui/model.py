@@ -48,6 +48,15 @@ class BankStatementWizardModel:
             _data.append(transaction_data)
         return _data
 
+    def get_transactions_based_on_selection(self, is_selected: bool) -> List[Dict]:
+        _data = []
+        for i, t in enumerate(self.ledger.transactions, 1):
+            if is_selected == t.included:
+                transaction_data = t.dict()
+                transaction_data.update({"#": i})
+                _data.append(transaction_data)
+        return _data
+
     @property
     def balance_data(self) -> Tuple[List[date], List[float]]:
         _date, _balance = [], []

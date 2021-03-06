@@ -16,7 +16,6 @@ class LedgerTable(panwid.DataTable):
         super().__init__(*args, **kwargs)
 
     def keypress(self, size, key):
-        logger.debug(f"Selection {self.selection.data}")
         if key == "r":
             self.refresh()
         elif key == "enter":
