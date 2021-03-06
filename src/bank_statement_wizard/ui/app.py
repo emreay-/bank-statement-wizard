@@ -200,8 +200,9 @@ class BankStatementWizardApp:
 
         self.table = LedgerTable(
             model=MODEL,
+            input_handling=self.unhandled_input,
             columns=[panwid.datatable.DataTableColumn(i) for i in fields],
-            data=MODEL.data
+            data=MODEL.data,
         )
         logger.debug(f"Created transactions table: {self.table}")
 

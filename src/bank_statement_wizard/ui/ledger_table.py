@@ -1,8 +1,6 @@
-import urwid
 import panwid
-import urwid.raw_display
+from typing import Callable
 
-from ..domain import Transaction
 from ..logging import get_logger
 from .model import BankStatementWizardModel
 
@@ -12,11 +10,13 @@ __all__ = ["LedgerTable"]
 
 
 class LedgerTable(panwid.DataTable):
-    def __init__(self, model: BankStatementWizardModel, *args, **kwargs):
+    def __init__(self, model: BankStatementWizardModel, input_handling: Callable, *args, **kwargs):
         self._model = model
+        self._input_handling = input_handling
         super().__init__(*args, **kwargs)
 
     def keypress(self, size, key):
+        logger.debug(f"Selection {self.selection.data}")
         if key == "r":
             self.refresh()
         elif key == "enter":
@@ -27,4 +27,5 @@ class LedgerTable(panwid.DataTable):
             else:
                 self._model.ledger.transactions[selected_index].included = True
                 self.selection.clear_attr("red")
+        self._input_handling(key)
         super().keypress(size, key)
