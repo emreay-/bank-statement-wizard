@@ -7,11 +7,18 @@ __all__ = ["PALETTE"]
 PALETTE = Palette("default",
                   **panwid.listbox.ScrollingListBox.get_palette_entries(),
                   **panwid.DataTable.get_palette_entries(
-                      user_entries={"table_row_body highlight": PaletteEntry(
-                          mono="white",
-                          foreground="white",
-                          background="black"
-                      )}
+                      user_entries={
+                          "table_row_body highlight": PaletteEntry(
+                              mono="white",
+                              foreground="white",
+                              background="dark red"
+                          ),
+                          "table_row_body focused": PaletteEntry(
+                              mono="white",
+                              foreground="white",
+                              background="dark gray"
+                          )
+                      }
                   ))
 PALETTE += [
     ("body", "white", "", "standout"),

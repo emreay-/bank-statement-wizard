@@ -22,9 +22,9 @@ class LedgerTable(panwid.DataTable):
             selected_index = self.selection.data["index"]
             if self._model.ledger.transactions[selected_index].included:
                 self._model.ledger.transactions[selected_index].included = False
-                self.selection.set_attr("red")
+                self.selection.set_attr("table_row_body highlight")
             else:
                 self._model.ledger.transactions[selected_index].included = True
-                self.selection.clear_attr("red")
+                self.selection.clear_attr("table_row_body highlight")
         self._input_handling(key)
         super().keypress(size, key)
