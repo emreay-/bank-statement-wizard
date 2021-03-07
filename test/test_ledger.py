@@ -20,8 +20,18 @@ def test_ledger():
         end=DateRangeElement(date=date(2018, 1, 3), inclusivity=Inclusivity.closed),
     )
 
-    ledger = Ledger().add_transactions(transactions())
+    _transactions = transactions()
+    ledger = Ledger().add_transactions(_transactions)
 
+    assert len(ledger) == len(_transactions)
+    assert abs(expected_balance - ledger.balance) < 1e-3
+    assert abs(expected_debit_balance - ledger.debit_balance) < 1e-3
+    assert abs(expected_credit_balance - ledger.credit_balance) < 1e-3
+    assert expected_date_range == ledger.date_range
+
+    ledger.add_transaction(transactions()[0])
+
+    assert len(ledger) == len(_transactions)
     assert abs(expected_balance - ledger.balance) < 1e-3
     assert abs(expected_debit_balance - ledger.debit_balance) < 1e-3
     assert abs(expected_credit_balance - ledger.credit_balance) < 1e-3
