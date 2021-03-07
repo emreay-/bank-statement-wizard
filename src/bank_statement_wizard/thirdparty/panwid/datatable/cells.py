@@ -1,4 +1,3 @@
-import urwid
 from .common import *
 import logging
 logger = logging.getLogger("panwid.datatable")
@@ -35,7 +34,6 @@ class DataTableCell(urwid.WidgetWrap):
 
         self._width = None
         self._height = None
-        # self.width = None
 
         if column.padding:
             self.padding = column.padding
@@ -43,9 +41,6 @@ class DataTableCell(urwid.WidgetWrap):
             self.padding = padding
 
         self.update_contents()
-
-        # logger.info(f"{self.column.name}, {self.column.width}, {self.column.align}")
-        # if self.row.row_height is not None:
 
         self.filler = urwid.Filler(self.contents)
 
@@ -85,22 +80,16 @@ class DataTableCell(urwid.WidgetWrap):
 
     @property
     def formatted_value(self):
-
         v = self.column._format(self.value)
         if not self.width:
             return v
-        # try:
         v = str(v)[:self.width-self.padding*2]
-        # logger.info(f"formatted_value: {v}")
         return v
-        # except TypeError:
-        # raise Exception(f"{v}, {type(v)}")
 
     def update_contents(self):
         pass
 
     def set_attr_maps(self):
-
         self.normal_attr_map[None] = self.attr
         self.highlight_attr_map[None] = self.attr_highlight
         self.normal_focus_map[None] = self.attr_focused
@@ -195,23 +184,8 @@ class DataTableCell(urwid.WidgetWrap):
     def height(self):
         return self._height
 
-    # def rows(self, size, focus=False):
-    #     if getattr(self.column, "truncate", None):
-    #         return 1
-    #     contents_rows = self.contents.rows((maxcol,), focus)
-    #     return contents_rows
-        # try:
-        #     return super().rows(size, focus)
-        # except Exception as e:
-        #     raise Exception(self, size, self.contents, e)
-
 
 class DataTableDividerCell(DataTableCell):
-
-    # @property
-    # def fiil(self):
-    #     return self.row.row_height is not None
-
     def selectable(self):
         return False
 
