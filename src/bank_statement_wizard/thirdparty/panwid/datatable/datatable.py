@@ -2,7 +2,7 @@ import copy
 import math
 import traceback
 from dataclasses import *
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Sequence
 
 import urwid_utils.palette
 
@@ -33,34 +33,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
     ATTR = "table"
 
-    limit = None
-    index = "index"
-
-    with_header = True
-    with_footer = False
-    with_scrollbar = False
-    empty_message = "(no data)"
-    row_height = None
-    cell_selection = False
-
-    sort_by = (None, None)
-    query_sort = False
-    sort_icons = True
-    sort_refocus = False
-    no_load_on_init = None
-
-    divider = DEFAULT_TABLE_DIVIDER
-    padding = DEFAULT_CELL_PADDING
-    row_style = None
-
-    detail_fn = None
-    detail_selectable = False
-    detail_hanging_indent = None
-
-    ui_sort = True
-    ui_resize = True
-    row_attr_fn = None
-
     attr_map = {}
     focus_map = {}
     column_focus_map = {}
@@ -71,106 +43,77 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
     def __init__(self,
                  columns: List[DataTableColumn],
                  data: Optional[Dict[str, Any]] = None,
-                 limit=None,
-                 index=None,
-                 with_header=None, with_footer=None, with_scrollbar=None,
-                 empty_message=None,
+                 limit: Optional[int] = None,
+                 index_column_name: str = "index",
+                 with_header: bool = True,
+                 with_footer: bool = False,
+                 with_scrollbar: bool = False,
+                 empty_message: str = "(no data)",
                  row_height=None,
-                 cell_selection=None,
-                 sort_by=None, query_sort=None, sort_icons=None,
-                 sort_refocus=None,
+                 cell_selection=False,
+                 sort_by=(None, None),
+                 query_sort=False,
+                 sort_icons=True,
                  no_load_on_init=None,
-                 divider=None, padding=None,
+                 divider=DEFAULT_TABLE_DIVIDER,
+                 padding=DEFAULT_CELL_PADDING,
                  row_style=None,
-                 detail_fn=None, detail_selectable=None,
+                 detail_fn=None,
+                 detail_selectable=False,
                  detail_hanging_indent=None,
-                 ui_sort=None,
-                 ui_resize=None,
+                 ui_sort=True,
+                 ui_resize=True,
                  row_attr_fn=None):
-
-        self._focus = 0
-        self.page = 0
 
         if not columns:
             raise Exception("Columns must be defined for the data table")
+
         self._columns = columns
+        self.data = data
+        self.limit = limit
+        self.index_column_name = index_column_name
+        self.with_header = with_header
+        self.with_footer = with_footer
+        self.with_scrollbar = with_scrollbar
+        self.empty_message = empty_message
+        self.row_height = row_height
+        self.cell_selection = cell_selection
 
-        if data is not None:
-            self.data = data
+        if isinstance(sort_by, tuple):
+            column, reverse = sort_by[0], sort_by[1]
+        else:
+            column, reverse = sort_by, None
+        self.sort_by = (column, reverse)
 
-        if index:
-            self.index = index
-
-        if self.index not in self.column_names:
-            self._columns.insert(0, DataTableColumn(self.index, hide=True))
-
-        if query_sort:
-            self.query_sort = query_sort
-
-        if sort_by:
-            if isinstance(sort_by, tuple):
-                column = sort_by[0]
-                reverse = sort_by[1]
-            else:
-                column = sort_by
-                reverse = None
-                self.sort_by = (column, reverse)
-
-            self.sort_by = (column, reverse)
-
+        self.query_sort = query_sort
         self.initial_sort = self.sort_by
+        self.sort_icons = sort_icons
+        self.no_load_on_init = no_load_on_init
 
-        if sort_icons is not None:
-            self.sort_icons = sort_icons
-        if no_load_on_init is not None:
-            self.no_load_on_init = no_load_on_init
-
-        if with_header is not None:
-            self.with_header = with_header
-        if with_footer is not None:
-            self.with_footer = with_footer
-        if with_scrollbar is not None:
-            self.with_scrollbar = with_scrollbar
-        if empty_message is not None:
-            self.empty_message = empty_message
-
-        if row_height is not None:
-            self.row_height = row_height
-
-        if cell_selection is not None:
-            self.cell_selection = cell_selection
-        if divider is not None:
-            self.divider = divider
-        if isinstance(self.divider, str):
+        if isinstance(divider, str):
             self.divider = DataTableDivider(self.divider)
-        if padding is not None:
-            self.padding = padding
+        else:
+            self.divider = divider
 
+        self.padding = padding
         if isinstance(self.padding, tuple):
             self.padding_left, self.padding_right = self.padding
         else:
             self.padding_left = self.padding_right = self.padding
 
-        if row_style is not None:
-            self.row_style = row_style
+        self.row_style = row_style
+        self.detail_fn = detail_fn
+        self.detail_selectable = detail_selectable
+        self.detail_hanging_indent = detail_hanging_indent
+        self.ui_sort = ui_sort
+        self.ui_resize = ui_resize
+        self.row_attr_fn = row_attr_fn
 
-        if ui_sort is not None:
-            self.ui_sort = ui_sort
-        if ui_resize is not None:
-            self.ui_resize = ui_resize
+        self._focus = 0
+        self.page = 0
 
-        if row_attr_fn is not None:
-            self.row_attr_fn = row_attr_fn
-
-        if detail_fn is not None:
-            self.detail_fn = detail_fn
-        if detail_selectable is not None:
-            self.detail_selectable = detail_selectable
-        if detail_hanging_indent is not None:
-            self.detail_hanging_indent = detail_hanging_indent
-        # self.offset = 0
-        if limit:
-            self.limit = limit
+        if self.index_column_name not in self.column_names:
+            self._columns.insert(0, DataTableColumn(self.index_column_name, hide=True))
 
         self.sort_column = None
         self._width = None
@@ -184,25 +127,14 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         if self.divider:
             self._columns = list(intersperse_divider(
                 self._columns, self.divider))
-            # self._columns = intersperse(self.divider, self._columns)
 
         for c in self._columns:
             c.table = self
 
-        kwargs = dict(
-            columns=self.column_names,
-            sort=False,
-            index_name=self.index or None
-            # sorted=True,
-        )
-        # if self.index:
-        #     kwargs["index_name"] = self.index
-
-        # self.df = DataTableDataFrame(**kwargs)
         self.df = DataTableDataFrame(
             columns=self.column_names,
             sort=False,
-            index_name=self.index or None
+            index_name=self.index_column_name or None
         )
 
         self.pile = urwid.Pile([])
@@ -212,13 +144,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             row_count_fn=self.row_count
         )
 
-        # urwid.connect_signal(
-        #     self.listbox, "select",
-        #     lambda source, selection: urwid.signals.emit_signal(
-        #         self, "select", self, self.get_dataframe_row(selection.index))
-        #     if self.selection
-        #     else None
-        # )
         urwid.connect_signal(
             self.listbox, "drag_start",
             lambda source, drag_from: urwid.signals.emit_signal(
@@ -237,7 +162,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         if self.limit:
             urwid.connect_signal(self.listbox, "load_more", self.load_more)
-            # self.offset = 0
 
         self.header = DataTableHeaderRow(
             self,
@@ -285,16 +209,9 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 (self.footer, self.pile.options('pack'))
             )
 
-        # if not self.no_load_on_init:
-        #     self.reset()
-
-            # if self.sort_by:
-            #     self.sort_by_column(self.sort_by)
-
         self.attr = urwid.AttrMap(
             self.pile,
             attr_map=self.attr_map,
-            # focus_map = self.focus_map
         )
         super(DataTable, self).__init__(self.attr)
 
@@ -754,7 +671,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                                row_height=self.row_height,
                                divider=self.divider,
                                padding=self.padding,
-                               # index=data[self.index],
+                               # index=data[self.index_column_name],
                                cell_selection=self.cell_selection,
                                style=self.row_style)
         return row
@@ -831,7 +748,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         row_index = None
         if self.sort_refocus:
-            row_index = self[self._focus].data.get(self.index, None)
+            row_index = self[self._focus].data.get(self.index_column_name, None)
             logger.debug("row_index: %s" % (row_index))
         self.sort(column_name, key=column.sort_key)
 
@@ -1112,7 +1029,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         return next((c for c in self._columns if c.name == name))
 
     @property
-    def data_columns(self):
+    def data_columns(self) -> Sequence[DataTableColumn]:
         return [c for c in self._columns if not isinstance(c, DataTableDivider)]
 
     @property
@@ -1158,7 +1075,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
     def swap_rows_by_field(self, p0, p1, field=None):
 
         if not field:
-            field = self.index
+            field = self.index_column_name
 
         i0 = self.position_to_index(p0)
         i1 = self.position_to_index(p1)
@@ -1309,7 +1226,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             self.df.delete_all_rows()
         else:
             try:
-                idx = getattr(self.selection.data, self.index)
+                idx = getattr(self.selection.data, self.index_column_name)
             except (AttributeError, IndexError):
                 pass
             pos = self.focus_position
