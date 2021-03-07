@@ -1,19 +1,20 @@
+from urwid_utils.palette import *
+import urwid
 import logging
 logger = logging.getLogger("panwid.tabview")
 
-import urwid
-from urwid_utils.palette import *
 
 # Based on the tabview widget from github/@ountainstorm
 # https://github.com/mountainstorm/mt_urwid/
+
 
 class TabHandle(urwid.WidgetWrap):
 
     LABEL_CHARS_UNLOCKED = u"\u24e7 "
     LABEL_CHARS_LOCKED = u"\u25cb "
 
-    def __init__(self, tab_view, title, locked=False, padding = 3,
-                 attr_inactive = {}, attr_active = {}):
+    def __init__(self, tab_view, title, locked=False, padding=3,
+                 attr_inactive={}, attr_active={}):
         self.tab_view = tab_view
         self.title = title
         self.locked = locked
@@ -31,7 +32,6 @@ class TabHandle(urwid.WidgetWrap):
 
     def set_text_attr(self, attr):
         self.text.set_text((attr, self.label))
-
 
     def selectable(self):
         return True
@@ -62,14 +62,14 @@ class TabHandle(urwid.WidgetWrap):
 
 class TabHeader(urwid.WidgetWrap):
 
-    def __init__(self, attr_inactive={}, attr_active={}, divider = True):
+    def __init__(self, attr_inactive={}, attr_active={}, divider=True):
 
         self.columns = urwid.Columns([], 1)
 
-        contents = [ ('weight', 1, x) for x in [self.columns] ]
+        contents = [('weight', 1, x) for x in [self.columns]]
         # contents = [ ('pack', self.attr)  ]
         if divider:
-            contents += [ ('pack', urwid.Divider('-')) ]
+            contents += [('pack', urwid.Divider('-'))]
         self.pile = urwid.Pile(contents)
         # self.pile.selectable = lambda: True
         super(TabHeader, self).__init__(self.pile)
@@ -95,9 +95,9 @@ class Tab(object):
         self.label = label
         self.content = content
         if hotkey:
-            Tab.HOTKEYS["meta %s" %(hotkey)] = self
+            Tab.HOTKEYS["meta %s" % (hotkey)] = self
         else:
-            hotkey = "meta %s" %(self.label[0].lower())
+            hotkey = "meta %s" % (self.label[0].lower())
             if not hotkey in Tab.HOTKEYS:
                 Tab.HOTKEYS[hotkey] = self
             else:
@@ -113,7 +113,6 @@ class Tab(object):
             return self.content
 
 
-
 class TabView(urwid.WidgetWrap):
 
     signals = ["activate"]
@@ -121,14 +120,14 @@ class TabView(urwid.WidgetWrap):
     def __init__(self, tabs,
                  attr_inactive={None: "tabview_inactive"},
                  attr_active={None: "tabview_active"},
-                 selected = 0, tab_bar_initial_focus = False):
+                 selected=0, tab_bar_initial_focus=False):
         self.attr_inactive = attr_inactive
         self.attr_active = attr_active
         self._contents = []
         self.tab_bar = TabHeader(attr_inactive, attr_active)
         self.body = urwid.AttrMap(urwid.SolidFill(' '), attr_active)
         display_widget = urwid.Pile(
-            ( ('pack', self.tab_bar), ('weight', 1, self.body) )
+            (('pack', self.tab_bar), ('weight', 1, self.body))
         )
         # display_widget.selectable = lambda: True
         super(TabView, self).__init__(display_widget)
@@ -146,14 +145,14 @@ class TabView(urwid.WidgetWrap):
     def get_palette_entries(cls):
         return {
             "tabview_inactive": PaletteEntry(
-                foreground = "light gray",
-                background = "black"
+                foreground="light gray",
+                background="black"
             ),
             "tabview_active": PaletteEntry(
-                foreground = "white",
-                background = "dark blue",
-                foreground_high = "white",
-                background_high = "#009",
+                foreground="white",
+                background="dark blue",
+                foreground_high="white",
+                background_high="#009",
             ),
         }
 
@@ -169,8 +168,8 @@ class TabView(urwid.WidgetWrap):
                     self,
                     label,
                     locked,
-                    attr_active = self.attr_active,
-                    attr_inactive = self.attr_inactive,
+                    attr_active=self.attr_active,
+                    attr_inactive=self.attr_inactive,
 
                 ),
                 self.tab_bar.options('pack')
@@ -216,7 +215,6 @@ class TabView(urwid.WidgetWrap):
                 return i
         return None
 
-
     def set_active_next(self):
         if self.active_tab < (len(self._contents)-1):
             self.set_active_tab(self.active_tab+1)
@@ -258,5 +256,6 @@ class TabView(urwid.WidgetWrap):
             self.set_active_tab(idx)
         else:
             return super(TabView, self).keypress(size, key)
+
 
 __all__ = ["TabView", "Tab"]

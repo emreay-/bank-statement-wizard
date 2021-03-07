@@ -8,6 +8,7 @@ from .cells import *
 from .columns import *
 from orderedattrdict import AttrDict
 
+
 class DataTableRow(urwid.WidgetWrap):
 
     def __init__(self, table,
@@ -15,7 +16,7 @@ class DataTableRow(urwid.WidgetWrap):
                  row_height=None,
                  divider=None, padding=None,
                  cell_selection=False,
-                 style = None,
+                 style=None,
                  *args, **kwargs):
 
         self.table = table
@@ -30,12 +31,13 @@ class DataTableRow(urwid.WidgetWrap):
 
         self.sort = self.table.sort_by
         self.attr = self.ATTR
-        self.attr_focused = "%s focused" %(self.attr)
-        self.attr_column_focused = "%s column_focused" %(self.attr)
-        self.attr_highlight = "%s highlight" %(self.attr)
-        self.attr_highlight_focused = "%s focused" %(self.attr_highlight)
-        self.attr_highlight_column_focused = "%s column_focused" %(self.attr_highlight)
-        self.attr_map =  {
+        self.attr_focused = "%s focused" % (self.attr)
+        self.attr_column_focused = "%s column_focused" % (self.attr)
+        self.attr_highlight = "%s highlight" % (self.attr)
+        self.attr_highlight_focused = "%s focused" % (self.attr_highlight)
+        self.attr_highlight_column_focused = "%s column_focused" % (
+            self.attr_highlight)
+        self.attr_map = {
             None: self.attr,
         }
 
@@ -77,8 +79,8 @@ class DataTableRow(urwid.WidgetWrap):
 
         self.attrmap = urwid.AttrMap(
             self.pile,
-            attr_map = self.attr_map,
-            focus_map = self.focus_map,
+            attr_map=self.attr_map,
+            focus_map=self.focus_map,
         )
 
         super(DataTableRow, self).__init__(self.attrmap)
@@ -89,14 +91,14 @@ class DataTableRow(urwid.WidgetWrap):
             return
         l = [1]
         # for i, c in enumerate(self.cells):
-        for c, w in zip(self.cells, self.column_widths( (self.table.width,) )):
+        for c, w in zip(self.cells, self.column_widths((self.table.width,))):
             # try:
             # c.contents.render( (self.table.visible_columns[i].width,), False)
             # except Exception as e:
             #     raise Exception(c, c.contents, e)
 
             try:
-                rows = c.contents.rows( (w,) )
+                rows = c.contents.rows((w,))
             except AttributeError:
                 continue
             # logger.debug(f"{c}, {c.contents}, {w}, {rows}")
@@ -116,7 +118,6 @@ class DataTableRow(urwid.WidgetWrap):
         # logger.debug(f"height: {self.box.height}")
         # (w, o) = self.pile.contents[0]
         # self.pile.contents[0] = (w, self.pile.options("given", max(l)))
-
 
     def keypress(self, size, key):
         try:
@@ -150,7 +151,8 @@ class DataTableRow(urwid.WidgetWrap):
             if not (idx or isinstance(cell, DataTableDividerCell)):
                 idx = i
             col = self.table.visible_columns[i]
-            options = columns.options(col.sizing, col.width_with_padding(self.padding))
+            options = columns.options(
+                col.sizing, col.width_with_padding(self.padding))
             columns.contents.append(
                 (cell, options)
 
@@ -182,19 +184,20 @@ class DataTableRow(urwid.WidgetWrap):
                 cell.highlight()
             else:
                 cell.unhighlight()
+
     def __len__(self):
         return len(self.columns.contents)
 
     def __iter__(self):
-        return iter( self.columns[i] for i in range(0, len(self.columns.contents)) )
+        return iter(self.columns[i] for i in range(0, len(self.columns.contents)))
 
     @property
     def values(self):
-        return AttrDict(list(zip([c.name for c in self.table.visible_columns], [ c.value for c in self ])))
+        return AttrDict(list(zip([c.name for c in self.table.visible_columns], [c.value for c in self])))
 
     @property
     def data_cells(self):
-        return [ c for c in self.cells if not isinstance(c, DataTableDividerCell)]
+        return [c for c in self.cells if not isinstance(c, DataTableDividerCell)]
 
     def column_widths(self, size=None):
         if not size:
@@ -221,10 +224,10 @@ class DataTableDetails(urwid.WidgetWrap):
         ])
         if indent:
             self.columns.contents.insert(0,
-                (urwid.Padding(urwid.Text(" ")),
-                 self.columns.options("given", indent)
-                )
-            )
+                                         (urwid.Padding(urwid.Text(" ")),
+                                          self.columns.options("given", indent)
+                                          )
+                                         )
 
         super().__init__(self.columns)
 
@@ -263,7 +266,6 @@ class DataTableBodyRow(DataTableRow):
                 return self.table.df[self.index, column]
             else:
                 raise Exception(column, self.table.df.columns)
-
 
     def __setitem__(self, column, value):
         self.table.df[self.index, column] = value
@@ -316,26 +318,26 @@ class DataTableBodyRow(DataTableRow):
             return
         content = self.table.detail_fn(self.data)
 
-        self.table.header.render( (self.table.width,) )
+        self.table.header.render((self.table.width,))
         indent_width = 0
         visible_count = itertools.count()
 
         def should_indent(x):
             if (isinstance(self.table.detail_hanging_indent, int)
-                and (x[2] is None or x[2] <= self.table.detail_hanging_indent)):
+                    and (x[2] is None or x[2] <= self.table.detail_hanging_indent)):
                 return True
             elif (isinstance(self.table.detail_hanging_indent, str)
-                and x[1].name != self.table.detail_hanging_indent):
-                  return True
+                  and x[1].name != self.table.detail_hanging_indent):
+                return True
             return False
 
         if self.table.detail_hanging_indent:
             indent_width = sum([
                 x[1].width if not x[1].hide else 0
                 for x in itertools.takewhile(
-                        should_indent,
-                        [ (i, c, next(visible_count) if not c.hide else None)
-                          for i, c in enumerate(self.table._columns) ]
+                    should_indent,
+                    [(i, c, next(visible_count) if not c.hide else None)
+                     for i, c in enumerate(self.table._columns)]
                 )
             ])
 
@@ -344,7 +346,6 @@ class DataTableBodyRow(DataTableRow):
             (self.details, self.pile.options("pack"))
         )
         self["_details"]["open"] = True
-
 
     def close_details(self):
         if not self.table.detail_fn or not self.details_open:
@@ -374,25 +375,26 @@ class DataTableBodyRow(DataTableRow):
     # def unfocus_details(self):
     #     self.pile.focus_position = 0
 
-
     def set_attr(self, attr):
         attr_map = self.attrmap.get_attr_map()
         attr_map[self.ATTR] = attr
         if self.cell_selection:
-            attr_map[self.attr_highlight] = "%s highlight focused" %(attr)
+            attr_map[self.attr_highlight] = "%s highlight focused" % (attr)
         else:
-            attr_map[self.attr_highlight] = "%s highlight" %(attr)
+            attr_map[self.attr_highlight] = "%s highlight" % (attr)
         self.attrmap.set_attr_map(attr_map)
 
         focus_map = self.attrmap.get_focus_map()
-        focus_map[self.ATTR] = "%s focused" %(attr)
-        focus_map[self.attr_highlight] = "%s highlight focused" %(attr)
+        focus_map[self.ATTR] = "%s focused" % (attr)
+        focus_map[self.attr_highlight] = "%s highlight focused" % (attr)
         if self.cell_selection:
-            focus_map[self.attr_focused] = "%s column_focused" %(attr)
-            focus_map[self.attr_highlight_focused] = "%s highlight column_focused" %(attr)
+            focus_map[self.attr_focused] = "%s column_focused" % (attr)
+            focus_map[self.attr_highlight_focused] = "%s highlight column_focused" % (
+                attr)
         else:
-            focus_map[self.attr_focused] = "%s focused" %(attr)
-            focus_map[self.attr_highlight_focused] = "%s highlight focused" %(attr)
+            focus_map[self.attr_focused] = "%s focused" % (attr)
+            focus_map[self.attr_highlight_focused] = "%s highlight focused" % (
+                attr)
         self.attrmap.set_focus_map(focus_map)
 
     def clear_attr(self, attr):
@@ -405,7 +407,7 @@ class DataTableBodyRow(DataTableRow):
         for a in [self.attr_focused, self.attr_highlight_focused]:
             if a in focus_map:
                 del focus_map[a]
-        focus_map[self.ATTR] = "%s focused" %(self.ATTR)
+        focus_map[self.ATTR] = "%s focused" % (self.ATTR)
         self.attrmap.set_focus_map(focus_map)
 
     def make_cells(self):
@@ -544,7 +546,6 @@ class DataTableHeaderRow(DataTableRow):
                     # raise Exception(self.mouse_drag_source.column.name, self.mouse_drag_start, self.mouse_drag_end)
                     self.mouse_drag_source = None
                     self.mouse_drag_start = None
-
 
 
 class DataTableFooterRow(DataTableRow):

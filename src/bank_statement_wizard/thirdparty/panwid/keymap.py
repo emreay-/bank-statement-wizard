@@ -1,5 +1,8 @@
 # Mixin class for mapping keyboard input to widget methods.
 
+import re
+import urwid
+import six
 import logging
 logger = logging.getLogger(__name__)
 # import os
@@ -13,12 +16,10 @@ logger = logging.getLogger(__name__)
 # else:
 #     logger.addHandler(logging.NullHandler())
 
-import six
-import urwid
-import re
 
 _camel_snake_re_1 = re.compile(r'(.)([A-Z][a-z]+)')
 _camel_snake_re_2 = re.compile('([a-z0-9])([A-Z])')
+
 
 def camel_to_snake(s):
     s = _camel_snake_re_1.sub(r'\1_\2', s)
@@ -55,7 +56,8 @@ def keymapped():
                 key = super(cls, self).keypress(size, key)
                 if not key:
                     return
-                logger.debug("%s wrapped keypress: %s" %(self.__class__.__name__, key))
+                logger.debug("%s wrapped keypress: %s" %
+                             (self.__class__.__name__, key))
                 # logger.debug("%s scope: %s, keymap: %s" %(self.__class__.__name__, self.KEYMAP_SCOPE, getattr(self, "KEYMAP", None)))
                 for scope in [cls.KEYMAP_SCOPE, "any"]:
                     # logger.debug("key: %s, scope: %s, %s, %s" %(key, scope, self.KEYMAP_SCOPE, self.KEYMAP))
@@ -77,7 +79,8 @@ def keymapped():
                                     raise Exception
                             command = cmd.replace(" ", "_")
                             if not command in self.KEYMAP_MAPPING:
-                                logger.debug("%s: %s not in mapping %s" %(cls, key, self.KEYMAP_MAPPING))
+                                logger.debug("%s: %s not in mapping %s" % (
+                                    cls, key, self.KEYMAP_MAPPING))
                             if hasattr(self, command):
                                 fn_name = command
                             else:
@@ -93,7 +96,7 @@ def keymapped():
             return keypress
 
         def default_keypress(self, size, key):
-            logger.debug("default keypress: %s" %(key))
+            logger.debug("default keypress: %s" % (key))
             key = super(cls, self).keypress(size, key)
             return key
 
@@ -102,9 +105,9 @@ def keymapped():
         scope = camel_to_snake(cls.__name__)
         cls.KEYMAP_SCOPE = scope
         func = getattr(cls, "keypress", None)
-        logger.debug("func class: %s" %(cls.__name__))
+        logger.debug("func class: %s" % (cls.__name__))
         if not func:
-            logger.debug("setting default keypress for %s" %(cls.__name__))
+            logger.debug("setting default keypress for %s" % (cls.__name__))
             cls.keypress = default_keypress
         else:
             cls.keypress = keypress_decorator(func)
@@ -149,6 +152,7 @@ class KeymapMovementMixin(object):
 
     @keymap_command("end")
     def keymap_end(self): self.focus_position = len(self)-1
+
 
 __all__ = [
     "keymapped",

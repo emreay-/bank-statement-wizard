@@ -1,11 +1,13 @@
+import collections
+import raccoon as rc
 import logging
 logger = logging.getLogger("panwid.datatable")
-import raccoon as rc
-import collections
+
 
 class DataTableDataFrame(rc.DataFrame):
 
-    DATA_TABLE_COLUMNS = ["_dirty", "_focus_position", "_value_fn", "_cls", "_details", "_rendered_row"]
+    DATA_TABLE_COLUMNS = ["_dirty", "_focus_position",
+                          "_value_fn", "_cls", "_details", "_rendered_row"]
 
     def __init__(self, data=None, columns=None, index=None, index_name="index", sort=None):
 
@@ -26,12 +28,11 @@ class DataTableDataFrame(rc.DataFrame):
         try:
             return super(DataTableDataFrame, self)._validate_index(indexes)
         except ValueError:
-            logger.error("duplicates in index: %s" %(
+            logger.error("duplicates in index: %s" % (
                 [item for item, count
                  in list(collections.Counter(indexes).items()) if count > 1
-                ]))
+                 ]))
             raise
-
 
     def log_dump(self, n=5, columns=None, label=None):
         df = self
@@ -39,8 +40,8 @@ class DataTableDataFrame(rc.DataFrame):
             if not isinstance(columns, list):
                 columns = [columns]
             df = df[columns]
-        logger.info("%slength: %d, index: %s [%s%s]\n%s" %(
-            "%s, " %(label) if label else "",
+        logger.info("%slength: %d, index: %s [%s%s]\n%s" % (
+            "%s, " % (label) if label else "",
             len(self),
             self.index_name,
             ",".join([str(x) for x in self.index[0:min(n, len(self.index))]]),
@@ -59,13 +60,14 @@ class DataTableDataFrame(rc.DataFrame):
 
         data = dict(
             list(zip((data_columns),
-                [ list(z) for z in zip(*[[
-                    d.get(k, None if k != "_details" else {"open": False, "disabled": False})
-                    if isinstance(d, collections.abc.MutableMapping)
-                    else getattr(d, k, None if k != "_details" else {"open": False, "disabled": False})
-                    # for k in data_columns + self.DATA_TABLE_COLUMNS] for d in rows])]
-                    for k in data_columns] for d in rows])]
-            ))
+                     [list(z) for z in zip(*[[
+                         d.get(k, None if k != "_details" else {
+                             "open": False, "disabled": False})
+                         if isinstance(d, collections.abc.MutableMapping)
+                         else getattr(d, k, None if k != "_details" else {"open": False, "disabled": False})
+                         # for k in data_columns + self.DATA_TABLE_COLUMNS] for d in rows])]
+                         for k in data_columns] for d in rows])]
+                     ))
         )
         return data
 
@@ -78,7 +80,8 @@ class DataTableDataFrame(rc.DataFrame):
 
         if not limit:
             if len(rows):
-                indexes = [x for x in self.index if x not in data.get(self.index_name, [])]
+                indexes = [x for x in self.index if x not in data.get(
+                    self.index_name, [])]
                 if len(indexes):
                     self.delete_rows(indexes)
             else:
@@ -110,7 +113,8 @@ class DataTableDataFrame(rc.DataFrame):
         if not length:
             return
 
-        colnames = list(self.columns) + [c for c in self.DATA_TABLE_COLUMNS if c not in self.columns]
+        colnames = list(
+            self.columns) + [c for c in self.DATA_TABLE_COLUMNS if c not in self.columns]
 
         # data_columns = list(set().union(*(list(d.keys()) for d in rows)))
         data = self.transpose_data(rows)
@@ -125,11 +129,11 @@ class DataTableDataFrame(rc.DataFrame):
                 self[c] = None
 
         kwargs = dict(
-            columns =  colnames,
-            data = data,
+            columns=colnames,
+            data=data,
             sort=False,
             index=data[self.index_name],
-            index_name = self.index_name,
+            index_name=self.index_name,
         )
 
         try:

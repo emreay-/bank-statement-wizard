@@ -1,9 +1,9 @@
 from __future__ import division
+from urwid_utils.palette import *
+import urwid
 import logging
 logger = logging.getLogger(__name__.split(".")[0])
 
-import urwid
-from urwid_utils.palette import *
 
 class ListBoxScrollBar(urwid.WidgetWrap):
 
@@ -19,40 +19,41 @@ class ListBoxScrollBar(urwid.WidgetWrap):
         if (len(self.parent.body)
             and self.parent.row_count
             and self.parent.focus is not None
-            and self.parent.row_count > height):
+                and self.parent.row_count > height):
             scroll_position = int(
                 self.parent.focus_position / self.parent.row_count * height
             )
-            scroll_marker_height = max( height * (height / self.parent.row_count ), 1)
+            scroll_marker_height = max(
+                height * (height / self.parent.row_count), 1)
         else:
             scroll_position = -1
 
         pos_marker = urwid.AttrMap(urwid.Text(" "),
                                    {None: "scroll_pos"}
-        )
+                                   )
 
         down_marker = urwid.AttrMap(urwid.Text(u"\N{DOWNWARDS ARROW}"),
-                                   {None: "scroll_marker"}
-        )
+                                    {None: "scroll_marker"}
+                                    )
 
         begin_marker = urwid.AttrMap(urwid.Text(u"\N{CIRCLED MINUS}"),
-                                   {None: "scroll_marker"}
-        )
+                                     {None: "scroll_marker"}
+                                     )
 
         end_marker = urwid.AttrMap(urwid.Text(u"\N{CIRCLED PLUS}"),
                                    {None: "scroll_marker"}
-        )
+                                   )
 
         view_marker = urwid.AttrMap(urwid.Text(" "),
                                     {None: "scroll_view"}
-        )
+                                    )
 
         bg_marker = urwid.AttrMap(urwid.Text(" "),
-                                   {None: "scroll_bg"}
-        )
+                                  {None: "scroll_bg"}
+                                  )
 
         for i in range(height):
-            if abs( i - scroll_position ) <= scroll_marker_height//2:
+            if abs(i - scroll_position) <= scroll_marker_height//2:
                 if i == 0 and self.parent.focus_position == 0:
                     marker = begin_marker
                 elif i+1 == height and self.parent.row_count == self.parent.focus_position+1:
@@ -64,7 +65,7 @@ class ListBoxScrollBar(urwid.WidgetWrap):
             else:
                 if i < scroll_position:
                     marker = view_marker
-                elif self.parent.row_count and i/height < ( len(self.parent.body) / self.parent.row_count):
+                elif self.parent.row_count and i/height < (len(self.parent.body) / self.parent.row_count):
                     marker = view_marker
                 else:
                     marker = bg_marker
@@ -85,10 +86,10 @@ class ScrollingListBox(urwid.WidgetWrap):
                "load_more"]
 
     def __init__(self, body,
-                 infinite = False,
+                 infinite=False,
                  with_scrollbar=False,
                  scroll_rows=None,
-                 row_count_fn = None):
+                 row_count_fn=None):
 
         self.infinite = infinite
         self.with_scrollbar = with_scrollbar
@@ -122,32 +123,32 @@ class ScrollingListBox(urwid.WidgetWrap):
         return {
 
             "scroll_pos": PaletteEntry(
-                mono = "white",
-                foreground = "black",
-                background = "white",
-                foreground_high = "black",
-                background_high = "white"
+                mono="white",
+                foreground="black",
+                background="white",
+                foreground_high="black",
+                background_high="white"
             ),
             "scroll_marker": PaletteEntry(
-                mono = "white,bold",
-                foreground = "black,bold",
-                background = "white",
-                foreground_high = "black,bold",
-                background_high = "white"
+                mono="white,bold",
+                foreground="black,bold",
+                background="white",
+                foreground_high="black,bold",
+                background_high="white"
             ),
             "scroll_view": PaletteEntry(
-                mono = "black",
-                foreground = "black",
-                background = "light gray",
-                foreground_high = "black",
-                background_high = "g50"
+                mono="black",
+                foreground="black",
+                background="light gray",
+                foreground_high="black",
+                background_high="g50"
             ),
             "scroll_bg": PaletteEntry(
-                mono = "black",
-                foreground = "light gray",
-                background = "dark gray",
-                foreground_high = "light gray",
-                background_high = "g23"
+                mono="black",
+                foreground="light gray",
+                background="dark gray",
+                foreground_high="light gray",
+                background_high="g23"
             ),
 
         }
@@ -162,14 +163,16 @@ class ScrollingListBox(urwid.WidgetWrap):
                 self.mouse_state = 1
                 self.drag_from = self.drag_last = (col, row)
             elif button == 4:
-                pos = self.listbox.focus_position - int(self.height * SCROLL_WHEEL_HEIGHT_RATIO)
+                pos = self.listbox.focus_position - \
+                    int(self.height * SCROLL_WHEEL_HEIGHT_RATIO)
                 if pos < 0:
                     pos = 0
                 self.listbox.focus_position = pos
                 self.listbox.make_cursor_visible(size)
                 self._invalidate()
             elif button == 5:
-                pos = self.listbox.focus_position + int(self.height * SCROLL_WHEEL_HEIGHT_RATIO)
+                pos = self.listbox.focus_position + \
+                    int(self.height * SCROLL_WHEEL_HEIGHT_RATIO)
                 if pos > len(self.listbox.body) - 1:
                     if self.infinite:
                         self.load_more = True
@@ -185,11 +188,11 @@ class ScrollingListBox(urwid.WidgetWrap):
                 if self.mouse_state == 1:
                     self.mouse_state = 2
                     urwid.signals.emit_signal(
-                        self, "drag_start",self, self.drag_from
+                        self, "drag_start", self, self.drag_from
                     )
                 else:
                     urwid.signals.emit_signal(
-                        self, "drag_continue",self,
+                        self, "drag_continue", self,
                         self.drag_last, self.drag_to
                     )
 
@@ -199,11 +202,10 @@ class ScrollingListBox(urwid.WidgetWrap):
             if self.mouse_state == 2:
                 self.drag_to = (col, row)
                 urwid.signals.emit_signal(
-                    self, "drag_stop",self, self.drag_from, self.drag_to
+                    self, "drag_stop", self, self.drag_from, self.drag_to
                 )
             self.mouse_state = 0
         return super(ScrollingListBox, self).mouse_event(size, event, button, col, row, focus)
-
 
     def keypress(self, size, key):
 
@@ -219,9 +221,9 @@ class ScrollingListBox(urwid.WidgetWrap):
                     not len(self.body)
                     or self.focus_position == len(self.body)-1)
         ):
-                self.load_more = True
-                self.queued_keypress = key
-                self._invalidate()
+            self.load_more = True
+            self.queued_keypress = key
+            self._invalidate()
 
         elif command == "activate":
             urwid.signals.emit_signal(self, "select", self, self.selection)
@@ -235,7 +237,6 @@ class ScrollingListBox(urwid.WidgetWrap):
         if len(self.body):
             return self.body[self.focus_position]
 
-
     def render(self, size, focus=False):
 
         maxcol = size[0]
@@ -248,10 +249,10 @@ class ScrollingListBox(urwid.WidgetWrap):
         # print
         # print self.listbox.get_focus_offset_inset(size)
         if (self.load_more
-            and (len(self.body) == 0
-                 or "bottom" in self.ends_visible((maxcol, maxrow))
-            )
-        ):
+                and (len(self.body) == 0
+                     or "bottom" in self.ends_visible((maxcol, maxrow))
+                     )
+            ):
 
             self.load_more = False
             self.page += 1
@@ -263,9 +264,9 @@ class ScrollingListBox(urwid.WidgetWrap):
             urwid.signals.emit_signal(
                 self, "load_more", focus)
             if (self.queued_keypress
-                and focus
-                and focus < len(self.body)
-            ):
+                    and focus
+                    and focus < len(self.body)
+                ):
                 # logger.info("send queued keypress")
                 self.keypress(size, self.queued_keypress)
             self.queued_keypress = None
@@ -276,7 +277,6 @@ class ScrollingListBox(urwid.WidgetWrap):
             self.scroll_bar.update(size)
 
         return super(ScrollingListBox, self).render(size, focus)
-
 
     def disable(self):
         self.selectable = lambda: False
@@ -319,5 +319,6 @@ class ScrollingListBox(urwid.WidgetWrap):
         if self.row_count_fn:
             return self.row_count_fn()
         return len(self.body)
+
 
 __all__ = ["ScrollingListBox"]

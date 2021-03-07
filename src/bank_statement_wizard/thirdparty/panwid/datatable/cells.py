@@ -1,9 +1,9 @@
+import urwid
+from .common import *
 import logging
 logger = logging.getLogger("panwid.datatable")
 
-from .common import *
 
-import urwid
 class DataTableCell(urwid.WidgetWrap):
 
     signals = ["click", "select"]
@@ -17,7 +17,6 @@ class DataTableCell(urwid.WidgetWrap):
                  padding=0,
                  *args, **kwargs):
 
-
         self.table = table
         self.column = column
         self.row = row
@@ -27,11 +26,12 @@ class DataTableCell(urwid.WidgetWrap):
         self.cell_selection = cell_selection
 
         self.attr = self.ATTR
-        self.attr_focused = "%s focused" %(self.attr)
-        self.attr_column_focused = "%s column_focused" %(self.attr)
-        self.attr_highlight = "%s highlight" %(self.attr)
-        self.attr_highlight_focused = "%s focused" %(self.attr_highlight)
-        self.attr_highlight_column_focused = "%s column_focused" %(self.attr_highlight)
+        self.attr_focused = "%s focused" % (self.attr)
+        self.attr_column_focused = "%s column_focused" % (self.attr)
+        self.attr_highlight = "%s highlight" % (self.attr)
+        self.attr_highlight_focused = "%s focused" % (self.attr_highlight)
+        self.attr_highlight_column_focused = "%s column_focused" % (
+            self.attr_highlight)
 
         self._width = None
         self._height = None
@@ -63,8 +63,8 @@ class DataTableCell(urwid.WidgetWrap):
 
         self.attrmap = urwid.AttrMap(
             self.filler,
-            attr_map = self.normal_attr_map,
-            focus_map = self.normal_focus_map
+            attr_map=self.normal_attr_map,
+            focus_map=self.normal_focus_map
         )
         super(DataTableCell, self).__init__(self.attrmap)
 
@@ -94,7 +94,7 @@ class DataTableCell(urwid.WidgetWrap):
         # logger.info(f"formatted_value: {v}")
         return v
         # except TypeError:
-            # raise Exception(f"{v}, {type(v)}")
+        # raise Exception(f"{v}, {type(v)}")
 
     def update_contents(self):
         pass
@@ -102,18 +102,22 @@ class DataTableCell(urwid.WidgetWrap):
     def set_attr_maps(self):
 
         self.normal_attr_map[None] = self.attr
-        self.highlight_attr_map [None] = self.attr_highlight
+        self.highlight_attr_map[None] = self.attr_highlight
         self.normal_focus_map[None] = self.attr_focused
         self.highlight_focus_map[None] = self.attr_highlight_focused
 
         if self.value_attr:
             self.normal_attr_map.update({None: self.value_attr})
-            self.normal_focus_map.update({None: "%s focused" %(self.value_attr)})
-            self.highlight_attr_map.update({None: "%s highlight" %(self.value_attr)})
+            self.normal_focus_map.update(
+                {None: "%s focused" % (self.value_attr)})
+            self.highlight_attr_map.update(
+                {None: "%s highlight" % (self.value_attr)})
             if self.cell_selection:
-                self.highlight_focus_map.update({None: "%s highlight column_focused" %(self.value_attr)})
+                self.highlight_focus_map.update(
+                    {None: "%s highlight column_focused" % (self.value_attr)})
             else:
-                self.highlight_focus_map.update({None: "%s highlight focused" %(self.value_attr)})
+                self.highlight_focus_map.update(
+                    {None: "%s highlight focused" % (self.value_attr)})
 
     def highlight(self):
         self.attrmap.set_attr_map(self.highlight_attr_map)
@@ -152,7 +156,7 @@ class DataTableCell(urwid.WidgetWrap):
         attr_map[None] = attr
         # self.attrmap.set_attr_map(attr_map)
         focus_map = self.attrmap.get_focus_map()
-        focus_map[None] = "%s focused" %(attr)
+        focus_map[None] = "%s focused" % (attr)
         self.attrmap.set_focus_map(focus_map)
 
     def clear_attr(self, attr):
@@ -160,7 +164,7 @@ class DataTableCell(urwid.WidgetWrap):
         attr_map = self.normal_attr_map
         # attr_map[None] = self.attr
         self.attrmap.set_attr_map(attr_map)
-        focus_map = self.normal_focus_map #.attr.get_focus_map()
+        focus_map = self.normal_focus_map  # .attr.get_focus_map()
         # focus_map[None] = self.attr_focused
         self.attrmap.set_focus_map(focus_map)
 
@@ -175,9 +179,9 @@ class DataTableCell(urwid.WidgetWrap):
             contents_rows = self.contents.rows(size, focus)
             self._height = contents_rows
         if (getattr(self.column, "truncate", None)
-            and isinstance(self.contents, urwid.Widget)
-            and hasattr(self.contents, "truncate")
-        ):
+                    and isinstance(self.contents, urwid.Widget)
+                    and hasattr(self.contents, "truncate")
+                ):
             self.contents.truncate(
                 self.width - (self.padding*2), end_char=self.column.truncate
             )
@@ -201,6 +205,7 @@ class DataTableCell(urwid.WidgetWrap):
         # except Exception as e:
         #     raise Exception(self, size, self.contents, e)
 
+
 class DataTableDividerCell(DataTableCell):
 
     # @property
@@ -212,7 +217,8 @@ class DataTableDividerCell(DataTableCell):
 
     def update_contents(self):
         if not (
-                (isinstance(self, DataTableHeaderCell) and not self.column.in_header)
+                (isinstance(self, DataTableHeaderCell)
+                 and not self.column.in_header)
                 or (isinstance(self, DataTableFooterCell) and not self.column.in_footer)
         ):
             divider = self.column.value
@@ -220,11 +226,12 @@ class DataTableDividerCell(DataTableCell):
             divider = urwid.Divider(" ")
         contents = urwid.Padding(
             divider,
-            left = self.column.padding_left,
-            right = self.column.padding_right
+            left=self.column.padding_left,
+            right=self.column.padding_right
         )
         self.contents = contents
         # self._invalidate()
+
 
 class DataTableBodyCell(DataTableCell):
 
@@ -255,6 +262,7 @@ class DataTableBodyCell(DataTableCell):
 
 class DataTableDividerBodyCell(DataTableDividerCell, DataTableBodyCell):
     pass
+
 
 class DataTableHeaderCell(DataTableCell):
 
@@ -288,9 +296,9 @@ class DataTableHeaderCell(DataTableCell):
                  else
                  DataTableText(
                      self.label,
-                     wrap = "space" if self.column.no_clip_header else "clip",
+                     wrap="space" if self.column.no_clip_header else "clip",
                  )
-        )
+                 )
 
         padding = urwid.Padding(
             label,
@@ -307,8 +315,9 @@ class DataTableHeaderCell(DataTableCell):
         if self.sort_icon:
             if self.column.align == "right":
                 columns.contents.insert(0,
-                    (DataTableText(""), columns.options("given", 1))
-                )
+                                        (DataTableText(""),
+                                         columns.options("given", 1))
+                                        )
             else:
                 columns.contents.append(
                     (DataTableText(""), columns.options("given", 1))
@@ -324,7 +333,7 @@ class DataTableHeaderCell(DataTableCell):
     def set_attr_maps(self):
 
         self.normal_attr_map[None] = self.attr
-        self.highlight_attr_map [None] = self.attr_highlight
+        self.highlight_attr_map[None] = self.attr_highlight
         # if self.cell_selection:
         self.normal_focus_map[None] = self.attr_column_focused
         self.highlight_focus_map[None] = self.attr_highlight_column_focused
@@ -348,7 +357,7 @@ class DataTableHeaderCell(DataTableCell):
             logger.info("cell drag")
             self.mouse_dragging = True
             return False
-                # urwid.emit_signal(self, "drag_start")
+            # urwid.emit_signal(self, "drag_start")
         elif event == "mouse release":
             logger.info("cell release")
             if self.mouse_dragging:
@@ -363,9 +372,10 @@ class DataTableHeaderCell(DataTableCell):
         super().mouse_event(size, event, button, col, row, focus)
 
     def update_sort(self, sort):
-        if not self.sort_icon: return
+        if not self.sort_icon:
+            return
 
-        index = 0 if self.column.align=="right" else 1
+        index = 0 if self.column.align == "right" else 1
         if sort and sort[0] == self.column.name:
             direction = self.DESCENDING_SORT_MARKER if sort[1] else self.ASCENDING_SORT_MARKER
             self.contents.contents[index][0].set_text(direction)
@@ -395,7 +405,8 @@ class DataTableFooterCell(DataTableCell):
             self.contents = self.table.decorate(
                 self.row,
                 self.column,
-                self.column._format(self.column.footer_fn(self.column, footer_arg))
+                self.column._format(
+                    self.column.footer_fn(self.column, footer_arg))
             )
         else:
             self.contents = DataTableText("")

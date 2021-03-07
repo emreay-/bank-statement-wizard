@@ -1,5 +1,6 @@
 import urwid
 
+
 class PopUpMixin(object):
 
     def open_popup(self, view, title=None, width=75, height=75):
@@ -24,7 +25,7 @@ class PopUpMixin(object):
 
 class PopUpFrame(urwid.WidgetWrap):
 
-    def __init__(self, parent, body, title = None):
+    def __init__(self, parent, body, title=None):
 
         self.parent = parent
         self.line_box = urwid.LineBox(body)
@@ -35,13 +36,14 @@ class PopUpOverlay(urwid.Overlay):
 
     def __init__(self, parent, *args, **kwargs):
         self.parent = parent
-        super(PopUpOverlay,self).__init__(*args, **kwargs)
+        super(PopUpOverlay, self).__init__(*args, **kwargs)
 
     def keypress(self, size, key):
-        if key in [ "esc", "q" ]:
+        if key in ["esc", "q"]:
             self.parent.close_popup()
         else:
             return super(PopUpOverlay, self).keypress(size, key)
+
 
 class BasePopUp(urwid.WidgetWrap):
 
@@ -50,6 +52,7 @@ class BasePopUp(urwid.WidgetWrap):
     def selectable(self):
         return True
 
+
 class BaseDialog(BasePopUp):
 
     choices = []
@@ -57,9 +60,10 @@ class BaseDialog(BasePopUp):
 
     def __init__(self, parent, prompt=None):
         self.parent = parent
-        if prompt: self.prompt = prompt
+        if prompt:
+            self.prompt = prompt
         self.text = urwid.Text(
-            self.prompt + "[%s]" %("".join(list(self.choices.keys()))), align="center"
+            self.prompt + "[%s]" % ("".join(list(self.choices.keys()))), align="center"
         )
         super(BaseDialog, self).__init__(
             urwid.Filler(urwid.Padding(self.text))
@@ -74,6 +78,7 @@ class BaseDialog(BasePopUp):
         else:
             return key
 
+
 class BaseView(urwid.WidgetWrap):
 
     focus_widgets = []
@@ -82,7 +87,8 @@ class BaseView(urwid.WidgetWrap):
     def __init__(self, view):
 
         self.view = view
-        self.placeholder = urwid.WidgetPlaceholder(urwid.Filler(urwid.Text("")))
+        self.placeholder = urwid.WidgetPlaceholder(
+            urwid.Filler(urwid.Text("")))
         super(BaseView, self).__init__(self.placeholder)
         self.placeholder.original_widget = self.view
 
@@ -104,6 +110,7 @@ class BaseView(urwid.WidgetWrap):
     def close_popup(self, source=None):
         self._w.original_widget = self.view
         self.popup_visible = False
+
 
 __all__ = [
     "BaseView",
