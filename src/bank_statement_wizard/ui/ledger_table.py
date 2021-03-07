@@ -1,6 +1,6 @@
-import panwid
 from typing import Callable
 
+from ..thirdparty import panwid
 from ..logging import get_logger
 from ..domain import TransactionId
 from .model import BankStatementWizardModel, SelectOperation

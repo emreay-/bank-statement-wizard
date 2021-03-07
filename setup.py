@@ -17,6 +17,8 @@ setup(
         "reportlab",
         "urwid",
         "urwid-utils>=0.1.2",
-        "panwid==v0.3.0.dev15",
+        "six",
+        "raccoon>=3.0.0",
+        "orderedattrdict"
     ]
 )

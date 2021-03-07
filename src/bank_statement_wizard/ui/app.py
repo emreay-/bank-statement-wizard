@@ -3,12 +3,12 @@ import weakref
 from typing import Optional, Tuple, cast, List
 
 import urwid
-import panwid
 import urwid.raw_display
 
 from matplotlib import pyplot as pl
 from matplotlib.dates import DateFormatter, MonthLocator, YearLocator
 
+from ..thirdparty import panwid
 from .palette import PALETTE
 from .utility import *
 from .ledger_table import LedgerTable

@@ -1,4 +1,4 @@
-import panwid
+from ..thirdparty import panwid
 from urwid_utils.palette import Palette, PaletteEntry
 
 __all__ = ["PALETTE"]
