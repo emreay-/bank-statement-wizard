@@ -1,19 +1,16 @@
-from .common import *
+import copy
+import math
+import traceback
+from dataclasses import *
+from typing import List, Dict, Any, Optional
+
+import urwid_utils.palette
+
 from .columns import *
 from .rows import *
 from .dataframe import *
-import typing
-from dataclasses import *
-import math
-import traceback
-import copy
-import itertools
-from collections.abc import MutableMapping
-from orderedattrdict import OrderedDict
 from ..listbox import ScrollingListBox
-import urwid_utils.palette
-import urwid
-import logging
+
 logger = logging.getLogger("panwid.datable")
 
 
@@ -35,10 +32,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                "drag_start", "drag_continue", "drag_stop"]
 
     ATTR = "table"
-
-    columns = []
-
-    data = None
 
     limit = None
     index = "index"
@@ -76,8 +69,8 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
     highlight_focus_map2 = {}
 
     def __init__(self,
-                 columns=None,
-                 data=None,
+                 columns: List[DataTableColumn],
+                 data: Optional[Dict[str, Any]] = None,
                  limit=None,
                  index=None,
                  with_header=None, with_footer=None, with_scrollbar=None,
@@ -97,25 +90,19 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         self._focus = 0
         self.page = 0
-        if columns is not None:
-            self._columns = columns
-        else:
-            self._columns = [copy.copy(c) for c in self.columns]
 
-        if not self._columns:
-            raise Exception("must define columns for data table")
+        if not columns:
+            raise Exception("Columns must be defined for the data table")
+        self._columns = columns
+
+        if data is not None:
+            self.data = data
 
         if index:
             self.index = index
 
-        if not self.index in self.column_names:
-            self._columns.insert(
-                0,
-                DataTableColumn(self.index, hide=True)
-            )
-
-        if data is not None:
-            self.data = data
+        if self.index not in self.column_names:
+            self._columns.insert(0, DataTableColumn(self.index, hide=True))
 
         if query_sort:
             self.query_sort = query_sort
