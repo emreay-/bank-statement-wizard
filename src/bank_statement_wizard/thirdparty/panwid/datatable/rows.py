@@ -1,12 +1,11 @@
 import functools
-from collections import MutableMapping
-import itertools
-
-import urwid
 
 from .cells import *
 from .columns import *
 from orderedattrdict import AttrDict
+from ..logger import get_logger
+
+logger = get_logger()
 
 
 class DataTableRow(urwid.WidgetWrap):
@@ -503,9 +502,9 @@ class DataTableHeaderRow(DataTableRow):
     def selectable(self):
         return self.table.ui_sort
 
-    def update_sort(self, sort):
+    def update_sort(self, sort_info: SortInfo):
         for c in self.data_cells:
-            c.update_sort(sort)
+            c.update_sort(sort_info)
 
     def mouse_event(self, size, event, button, col, row, focus):
 

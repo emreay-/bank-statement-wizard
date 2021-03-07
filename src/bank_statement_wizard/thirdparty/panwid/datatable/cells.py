@@ -1,6 +1,10 @@
+import inspect
+
 from .common import *
-import logging
-logger = logging.getLogger("panwid.datatable")
+from .sort_info import SortInfo
+from ..logger import get_logger
+
+logger = get_logger()
 
 
 class DataTableCell(urwid.WidgetWrap):
@@ -345,13 +349,20 @@ class DataTableHeaderCell(DataTableCell):
         #     self.mouse_drag_start = None
         super().mouse_event(size, event, button, col, row, focus)
 
-    def update_sort(self, sort):
+    def update_sort(self, sort_info: SortInfo):
+        # summary = ""
+        # for fi in inspect.stack()[1:]:
+        #     summary += f"function={fi.function}, file={fi.filename}, line={fi.lineno}\n"
+        # logger.debug(f"Stack summary: {summary}")
+        logger.debug(f"self.sort_icon: {self.sort_icon}, sort_info: {sort_info}, column name={self.column.name}")
+
         if not self.sort_icon:
             return
 
         index = 0 if self.column.align == "right" else 1
-        if sort and sort[0] == self.column.name:
-            direction = self.DESCENDING_SORT_MARKER if sort[1] else self.ASCENDING_SORT_MARKER
+        if sort_info and sort_info.field_name == self.column.name:
+            logger.debug(f"Setting the header cell text for the sort direction")
+            direction = self.DESCENDING_SORT_MARKER if sort_info.is_reverse else self.ASCENDING_SORT_MARKER
             self.contents.contents[index][0].set_text(direction)
         else:
             self.contents.contents[index][0].set_text("")

@@ -1,8 +1,9 @@
 from __future__ import division
 from urwid_utils.palette import *
 import urwid
-import logging
-logger = logging.getLogger(__name__.split(".")[0])
+from .logger import get_logger
+
+logger = get_logger()
 
 
 class ListBoxScrollBar(urwid.WidgetWrap):

@@ -1,3 +1,4 @@
+from .sort_info import *
 from .datatable import *
 from .dataframe import *
 from .columns import *

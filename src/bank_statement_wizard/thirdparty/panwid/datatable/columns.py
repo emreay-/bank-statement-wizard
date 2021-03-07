@@ -1,7 +1,9 @@
 from .common import *
+from ..logger import get_logger
 from datetime import datetime, date as datetype
-import logging
-logger = logging.getLogger("panwid.datatable")
+
+
+logger = get_logger()
 
 
 class NoSuchColumnException(Exception):

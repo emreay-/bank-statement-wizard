@@ -1,7 +1,9 @@
 import collections
 import raccoon as rc
-import logging
-logger = logging.getLogger("panwid.datatable")
+
+from ..logger import get_logger
+
+logger = get_logger()
 
 
 class DataTableDataFrame(rc.DataFrame):
