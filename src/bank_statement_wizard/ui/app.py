@@ -63,29 +63,53 @@ class FilterMenu:
         self.parent = parent
 
     def launch(self, _: urwid.Widget):
-        reset_filters = urwid.Button("Reset Filters", self._reset_filters)
-        filter_selected = urwid.Button("Filter Selected Transactions", lambda _: self._filter_with_selection(True))
-        filter_unselected = urwid.Button("Filter Unselected Transactions", lambda _: self._filter_with_selection(False))
+        filter_selected = urwid.Button("Filter Selected Transactions", self._filter_selected)
+        filter_unselected = urwid.Button("Filter Unselected Transactions", self._filter_unselected)
+        clear_filters = urwid.Button("Clear Filters", self._clear_filters)
+        clear_selections = urwid.Button("Clear Selections", self._clear_selections)
+        clear_all = urwid.Button("Clear Filter & Selections", self._clear_all)
         done_button = urwid.Button("Done", lambda _: self._reset_loop_widget())
         self._set_loop_widget(
             create_overlay(create_line_box(urwid.Text("Plot Menu"), urwid.Divider("_", 0, 1),
-                                           reset_filters, filter_selected, filter_unselected, done_button)))
+                                           filter_selected, filter_unselected, clear_filters, clear_selections,
+                                           clear_all, done_button)))
 
-    def _apply_filters(self, filters: List):
+    def _apply_table_filters(self, filters: List):
         parent = self.parent()
         if parent.table is not None:
+            parent.table.clear_filters()
             parent.table.apply_filters(filters)
         self._reset_loop_widget()
 
-    def _reset_filters(self, _):
+    def _clear_table_filters(self):
         parent = self.parent()
         if parent.table is not None:
             parent.table.clear_filters()
         self._reset_loop_widget()
 
-    def _filter_with_selection(self, is_selected: bool):
-        indices = [i["#"] for i in MODEL.get_transactions_based_on_selection(is_selected=is_selected)]
-        self._apply_filters([lambda x: x["#"] not in indices])
+    def _filter_selected(self, _):
+        MODEL.set_selected_transactions_as_filtered()
+        self._apply_table_filters(MODEL.data_table_filter_for_operated_transactions())
+
+    def _filter_unselected(self, _):
+        MODEL.set_unselected_transactions_as_filtered()
+        self._apply_table_filters(MODEL.data_table_filter_for_operated_transactions())
+
+    def _clear_filters(self, _):
+        MODEL.clear_filters()
+        self._clear_table_filters()
+
+    def _clear_selections(self, _):
+        parent = self.parent()
+        if parent.table is not None:
+            for tid in MODEL.selected_transaction_ids:
+                parent.table.set_row_as_unselected(tid)
+        MODEL.clear_selections()
+        self._reset_loop_widget()
+
+    def _clear_all(self, _):
+        self._clear_filters(_)
+        self._clear_selections(_)
 
     def _set_loop_widget(self, widget: urwid.Widget):
         self.parent().loop.widget = widget
@@ -111,7 +135,7 @@ class PlotMenu:
         ax.xaxis.set_major_formatter(formatter)
         ax.xaxis.set_major_locator(MonthLocator())
         ax.xaxis.set_minor_locator(YearLocator())
-        pl.plot(*MODEL.balance_data)
+        pl.plot(*MODEL.balance_data())
         pl.gcf().autofmt_xdate()
         pl.show()
 
@@ -240,7 +264,6 @@ class BankStatementWizardApp:
             model=MODEL,
             input_handling=self.unhandled_input,
             columns=[panwid.datatable.DataTableColumn(i) for i in fields],
-            data=MODEL.data,
         )
         logger.debug(f"Created transactions table: {self.table}")
 
