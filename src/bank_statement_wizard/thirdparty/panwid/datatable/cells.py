@@ -80,7 +80,7 @@ class DataTableCell(urwid.WidgetWrap):
 
     @value.setter
     def value(self, value):
-        self.table.df[self.row.index, self.column.name] = value
+        self.table.data_frame[self.row.index, self.column.name] = value
 
     @property
     def formatted_value(self):
@@ -377,14 +377,14 @@ class DataTableFooterCell(DataTableCell):
     ATTR = "table_row_footer"
 
     def update_contents(self):
-        if self.column.footer_fn and len(self.table.df):
-            # self.table.df.log_dump()
+        if self.column.footer_fn and len(self.table.data_frame):
+            # self.table.data_frame.log_dump()
             if self.column.footer_arg == "values":
-                footer_arg = self.table.df[self.column.name].to_list()
+                footer_arg = self.table.data_frame[self.column.name].to_list()
             elif self.column.footer_arg == "rows":
-                footer_arg = self.table.df.iterrows()
+                footer_arg = self.table.data_frame.iterrows()
             elif self.column.footer_arg == "table":
-                footer_arg = self.table.df
+                footer_arg = self.table.data_frame
             else:
                 raise Exception
             self.contents = self.table.decorate(

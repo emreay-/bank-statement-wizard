@@ -125,7 +125,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self._initialized = False
         self._message_showing = False
 
-        self.filters = None
+        self.filters: Optional[List[Callable]] = None
         self.filtered_rows = list()
 
         if self.divider:
@@ -134,7 +134,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         for c in self._columns:
             c.table = self
 
-        self.df = DataTableDataFrame(
+        self.data_frame = DataTableDataFrame(
             columns=self.column_names,
             sort=False,
             index_name=self.index_column_name or None
@@ -509,7 +509,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 "index_name",
                 "log_dump",
         ]:
-            return getattr(self.df, attr)
+            return getattr(self.data_frame, attr)
         elif attr in ["body"]:
             return getattr(self.listbox, attr)
         raise AttributeError(attr)
@@ -583,16 +583,16 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.listbox._invalidate()
 
     def position_to_index(self, position):
-        return self.df.index[position]
+        return self.data_frame.index[position]
 
     def index_to_position(self, index):
-        return self.df.index.index(index)
+        return self.data_frame.index.index(index)
 
     def get_dataframe_row(self, index):
         try:
-            d = self.df.get_columns(index, as_dict=True)
+            d = self.data_frame.get_columns(index, as_dict=True)
         except ValueError as e:
-            raise Exception(e, index, self.df)
+            raise Exception(e, index, self.data_frame)
         cls = d.get("_cls")
         if cls:
             if hasattr(cls, "__dataclass_fields__"):
@@ -627,9 +627,9 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         #     return AttrDict(**d)
 
     def get_row(self, index):
-        row = self.df.get(index, "_rendered_row")
+        row = self.data_frame.get(index, "_rendered_row")
 
-        if self.df.get(index, "_dirty") or row is None:
+        if self.data_frame.get(index, "_dirty") or row is None:
             self.refresh_calculated_fields([index])
             # vals = self[index]
             vals = self.get_dataframe_row(index)
@@ -638,11 +638,11 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 attr = self.row_attr_fn(vals)
                 if attr:
                     row.set_attr(attr)
-            focus = self.df.get(index, "_focus_position")
+            focus = self.data_frame.get(index, "_focus_position")
             if focus is not None:
                 row.set_focus_column(focus)
-            self.df.set(index, "_rendered_row", row)
-            self.df.set(index, "_dirty", False)
+            self.data_frame.set(index, "_rendered_row", row)
+            self.data_frame.set(index, "_dirty", False)
         return row
 
     def get_row_by_position(self, position):
@@ -650,10 +650,10 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         return self.get_row(index)
 
     def get_value(self, row, column):
-        return self.df[self.position_to_index(row), column]
+        return self.data_frame[self.position_to_index(row), column]
 
     def set_value(self, row, column, value):
-        self.df.set(self.position_to_index(row), column, value)
+        self.data_frame.set(self.position_to_index(row), column, value)
 
     @property
     def selection(self):
@@ -673,15 +673,15 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
     def refresh_calculated_fields(self, indexes=None):
         if not indexes:
-            indexes = self.df.index[:]
+            indexes = self.data_frame.index[:]
         if not hasattr(indexes, "__len__"):
             indexes = [indexes]
         for col in self.data_columns:
             if not col.value_fn:
                 continue
             for index in indexes:
-                if self.df[index, "_dirty"]:
-                    self.df.set(index, col.name, col.value_fn(
+                if self.data_frame[index, "_dirty"]:
+                    self.data_frame.set(index, col.name, col.value_fn(
                         self, self.get_dataframe_row(index)))
 
     def visible_data_column_index(self, column_name) -> ColumnIndex:
@@ -755,7 +755,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             def key(x):
                 return x is None, x
 
-        self.df.sort_columns(
+        self.data_frame.sort_columns(
             column,
             key=key,
             reverse=self.sort_by.is_reverse)
@@ -774,8 +774,8 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             self.footer.set_focus_column(idx)
 
         # logger.debug("set_focus_column: %d" %(index))
-        self.df["_focus_position"] = idx
-        self.df["_dirty"] = True
+        self.data_frame["_focus_position"] = idx
+        self.data_frame["_dirty"] = True
 
     def cycle_sort_column(self, step):
 
@@ -793,7 +793,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.sort_by_column(index)
 
     def sort_index(self):
-        self.df.sort_index()
+        self.data_frame.sort_index()
         self._modified()
 
     def add_columns(self, columns, data=None):
@@ -804,7 +804,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         self._columns += columns
         for i, column in enumerate(columns):
-            self.df[column.name] = data = data[i] if data else None
+            self.data_frame[column.name] = data = data[i] if data else None
 
         self.invalidate()
 
@@ -818,7 +818,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                    if column != "divider"]
 
         self._columns = [c for c in self._columns if c.name not in columns]
-        self.df.delete_columns(columns)
+        self.data_frame.delete_columns(columns)
         self.invalidate()
 
     def set_columns(self, columns):
@@ -1031,20 +1031,20 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
     def add_row(self, data, sort=True):
 
-        self.df.append_rows([data])
+        self.data_frame.append_rows([data])
         if sort:
             self.sort_by_column()
         self.apply_filters()
 
     def delete_rows(self, indexes):
 
-        self.df.delete_rows(indexes)
+        self.data_frame.delete_rows(indexes)
         self.apply_filters()
         if self.focus_position > 0 and self.focus_position >= len(self)-1:
             self.focus_position = len(self)-1
 
     def invalidate(self):
-        self.df["_dirty"] = True
+        self.data_frame["_dirty"] = True
         if self.with_header:
             self.header.update()
         if self.with_footer:
@@ -1057,7 +1057,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         for index in indexes:
             self.refresh_calculated_fields(index)
 
-        self.df[indexes, "_dirty"] = True
+        self.data_frame[indexes, "_dirty"] = True
         self._modified()
         # FIXME: update header / footer if dynamic
 
@@ -1069,17 +1069,17 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         i0 = self.position_to_index(p0)
         i1 = self.position_to_index(p1)
 
-        r0 = {k: v[0] for k, v in list(self.df[i0, None].to_dict().items())}
-        r1 = {k: v[0] for k, v in list(self.df[i1, None].to_dict().items())}
+        r0 = {k: v[0] for k, v in list(self.data_frame[i0, None].to_dict().items())}
+        r1 = {k: v[0] for k, v in list(self.data_frame[i1, None].to_dict().items())}
 
         for k, v in list(r0.items()):
             if k != field:
-                self.df.set(i1, k, v)
+                self.data_frame.set(i1, k, v)
 
         for k, v in list(r1.items()):
             if k != field:
-                self.df.set(i0, k, v)
-        self.df.set(i0, "_dirty", True)
+                self.data_frame.set(i0, k, v)
+        self.data_frame.set(i0, "_dirty", True)
 
         self.invalidate_rows([i0, i1])
 
@@ -1105,7 +1105,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         self.filtered_rows = list(
             i
-            for i, row in enumerate(self.df.iterrows())
+            for i, row in enumerate(self.data_frame.iterrows())
             if not filters or all(
                 f(row)
                 for f in filters
@@ -1120,7 +1120,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         # self.invalidate()
 
     def clear_filters(self):
-        self.filtered_rows = list(range(len(self.df)))
+        self.filtered_rows = list(range(len(self.data_frame)))
         self.filters = None
         # self.invalidate()
 
@@ -1182,8 +1182,8 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         for row in rows:
             row["_cls"] = type(row)
 
-        updated = self.df.update_rows(rows, limit=self.limit)
-        self.df["_focus_position"] = self.sort_column
+        updated = self.data_frame.update_rows(rows, limit=self.limit)
+        self.data_frame["_focus_position"] = self.sort_column
 
         self.refresh_calculated_fields()
         self.apply_filters()
@@ -1213,7 +1213,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             self.page = 0
             offset = 0
             limit = self.limit
-            self.df.delete_all_rows()
+            self.data_frame.delete_all_rows()
         else:
             try:
                 idx = getattr(self.selection.data, self.index_column_name)
@@ -1318,13 +1318,13 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         with open(path, "r") as f:
             json = "\n".join(f.readlines())
-            self.df = DataTableDataFrame.from_json(json)
+            self.data_frame = DataTableDataFrame.from_json(json)
         self.reset()
 
     def save(self, path):
         # print(path)
         with open(path, "w") as f:
-            f.write(self.df.to_json())
+            f.write(self.data_frame.to_json())
 
 
 __all__ = ["DataTable", "DataTableColumn"]

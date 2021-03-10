@@ -249,10 +249,10 @@ class DataTableBodyRow(DataTableRow):
         return self.table.get_dataframe_row(self.index)
 
     def __getitem__(self, column):
-        cls = self.table.df[self.index, "_cls"]
+        cls = self.table.data_frame[self.index, "_cls"]
         # row = self.data
         if (
-                column not in self.table.df.columns
+                column not in self.table.data_frame.columns
                 and
                 hasattr(cls, "__dataclass_fields__")
                 and
@@ -260,15 +260,15 @@ class DataTableBodyRow(DataTableRow):
             # logger.info(f"__getitem__ property: {column}={getattr(self.data, column)}")
             return getattr(self.data, column)
         else:
-            if column in self.table.df.columns:
-                # logger.info(f"__getitem__: {column}={self.table.df.get(self.index, column)}")
-                return self.table.df[self.index, column]
+            if column in self.table.data_frame.columns:
+                # logger.info(f"__getitem__: {column}={self.table.data_frame.get(self.index, column)}")
+                return self.table.data_frame[self.index, column]
             else:
-                raise Exception(column, self.table.df.columns)
+                raise Exception(column, self.table.data_frame.columns)
 
     def __setitem__(self, column, value):
-        self.table.df[self.index, column] = value
-        # logger.info(f"__setitem__: {column}, {value}, {self.table.df[self.index, column]}")
+        self.table.data_frame[self.index, column] = value
+        # logger.info(f"__setitem__: {column}, {value}, {self.table.data_frame[self.index, column]}")
 
     def get(self, key, default=None):
 
