@@ -13,6 +13,8 @@ from .sort_info import SortInfo
 from ..listbox import ScrollingListBox
 from ..logger import get_logger
 
+__all__ = ["DataTable", "DataTableColumn"]
+
 logger = get_logger()
 
 
@@ -228,217 +230,9 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
     def query_result_count(self):
         raise Exception("query_result_count method must be defined")
 
-    @classmethod
-    def get_palette_entries(
-            cls,
-            user_entries={},
-            min_contrast_entries=None,
-            min_contrast=2.0,
-            default_background="black"
-    ):
-
-        foreground_map = {
-            "table_divider": ["light gray", "light gray"],
-            "table_row_body": ["light gray", "light gray"],
-            "table_row_header": ["light gray", "white"],
-            "table_row_footer": ["light gray", "white"],
-        }
-
-        background_map = {
-            None: ["black", "black"],
-            "focused": ["dark gray", "g15"],
-            "column_focused": ["black", "#660"],
-            "highlight": ["light gray", "g15"],
-            "highlight focused": ["light gray", "g23"],
-            "highlight column_focused": ["light gray", "#660"],
-        }
-
-        entries = dict()
-
-        row_attr = "table_row_body"
-        for suffix in [None, "focused", "column_focused",
-                       "highlight", "highlight focused",
-                       "highlight column_focused",
-                       ]:
-            if suffix:
-                attr = ' '.join([row_attr, suffix])
-            else:
-                attr = row_attr
-            entries[attr] = urwid_utils.palette.PaletteEntry(
-                mono="white",
-                foreground=foreground_map[row_attr][0],
-                background=background_map[suffix][0],
-                foreground_high=foreground_map[row_attr][1],
-                background_high=background_map[suffix][1],
-            )
-
-        header_foreground_map = {
-            None: ["white,bold", "white,bold"],
-            "focused": ["dark gray", "white,bold"],
-            "column_focused": ["black", "black"],
-            "highlight": ["yellow,bold", "yellow,bold"],
-            "highlight focused": ["yellow", "yellow"],
-            "highlight column_focused": ["yellow", "yellow"],
-        }
-
-        header_background_map = {
-            None: ["light gray", "g23"],
-            "focused": ["light gray", "g50"],
-            "column_focused": ["white", "g70"],  # "g23"],
-            "highlight": ["light gray", "g38"],
-            "highlight focused": ["light gray", "g50"],
-            "highlight column_focused": ["white", "g70"],
-        }
-
-        for prefix in ["table_row_header", "table_row_footer"]:
-            for suffix in [
-                    None, "focused", "column_focused",
-                    "highlight", "highlight focused",
-                    "highlight column_focused"
-            ]:
-                if suffix:
-                    attr = ' '.join([prefix, suffix])
-                else:
-                    attr = prefix
-                entries[attr] = urwid_utils.palette.PaletteEntry(
-                    mono="white",
-                    foreground=header_foreground_map[suffix][0],
-                    background=header_background_map[suffix][0],
-                    foreground_high=header_foreground_map[suffix][1],
-                    background_high=header_background_map[suffix][1],
-                )
-
-        for name, entry in list(user_entries.items()):
-            DataTable.focus_map[name] = "%s focused" % (name)
-            DataTable.highlight_map[name] = "%s highlight" % (name)
-            DataTable.column_focus_map["%s focused" %
-                                       (name)] = "%s column_focused" % (name)
-            DataTable.highlight_focus_map["%s highlight" % (
-                name)] = "%s highlight focused" % (name)
-            for suffix in [None, "focused", "column_focused",
-                           "highlight", "highlight focused",
-                           "highlight column_focused",
-                           ]:
-
-                # Check entry backgroun colors against default bg.  If they're
-                # the same, replace the entry's background color with focus or
-                # highglight color.  If not, preserve the entry background.
-
-                default_bg_rgb = urwid.AttrSpec(
-                    default_background, default_background, 16)
-                bg_rgb = urwid.AttrSpec(entry.background, entry.background, 16)
-                background = background_map[suffix][0]
-                if default_bg_rgb.get_rgb_values() != bg_rgb.get_rgb_values():
-                    background = entry.background
-
-                background_high = background_map[suffix][1]
-                if entry.background_high:
-                    bg_high_rgb = urwid.AttrSpec(
-                        entry.background_high,
-                        entry.background_high,
-                        (1 << 24
-                         if urwid_utils.palette.URWID_HAS_TRUE_COLOR
-                         else 256
-                         )
-                    )
-                    if default_bg_rgb.get_rgb_values() != bg_high_rgb.get_rgb_values():
-                        background_high = entry.background_high
-
-                foreground = entry.foreground
-                background = background
-                foreground_high = entry.foreground_high if entry.foreground_high else entry.foreground
-                if min_contrast_entries and name in min_contrast_entries:
-                    # All of this code is available in the colourettu package
-                    # (https://github.com/MinchinWeb/colourettu) but newer
-                    # versions don't run Python 3, and older versions don't work
-                    # right.
-                    def normalized_rgb(r, g, b):
-
-                        r1 = r / 255
-                        g1 = g / 255
-                        b1 = b / 255
-
-                        if r1 <= 0.03928:
-                            r2 = r1 / 12.92
-                        else:
-                            r2 = math.pow(((r1 + 0.055) / 1.055), 2.4)
-                        if g1 <= 0.03928:
-                            g2 = g1 / 12.92
-                        else:
-                            g2 = math.pow(((g1 + 0.055) / 1.055), 2.4)
-                        if b1 <= 0.03928:
-                            b2 = b1 / 12.92
-                        else:
-                            b2 = math.pow(((b1 + 0.055) / 1.055), 2.4)
-
-                        return (r2, g2, b2)
-
-                    def luminance(r, g, b):
-
-                        return math.sqrt(
-                            0.299*math.pow(r, 2) +
-                            0.587*math.pow(g, 2) +
-                            0.114*math.pow(b, 2)
-                        )
-
-                    def contrast(c1, c2):
-
-                        n1 = normalized_rgb(*c1)
-                        n2 = normalized_rgb(*c2)
-                        lum1 = luminance(*n1)
-                        lum2 = luminance(*n2)
-                        minlum = min(lum1, lum2)
-                        maxlum = max(lum1, lum2)
-                        return (maxlum + 0.05) / (minlum + 0.05)
-
-                    table_bg = background_map[suffix][1]
-                    attrspec_bg = urwid.AttrSpec(table_bg, table_bg, 256)
-                    color_bg = attrspec_bg.get_rgb_values()[3:6]
-                    attrspec_fg = urwid.AttrSpec(
-                        foreground_high,
-                        foreground_high,
-                        256
-                    )
-                    color_fg = attrspec_fg.get_rgb_values()[0:3]
-                    cfg = contrast(color_bg, color_fg)
-                    cblack = contrast((0, 0, 0), color_fg)
-                    # cwhite = contrast((255, 255, 255), color_fg)
-                    # logger.debug("%s, %s, %s" %(cfg, cblack, cwhite))
-                    # raise Exception("%s, %s, %s, %s, %s, %s" %(table_bg, color_fg, color_bg, cfg, cblack, cwhite))
-                    if cfg < min_contrast and cfg < cblack:
-                        # logger.debug("adjusting contrast of %s" %(name))
-                        foreground_high = "black"
-                        # if cblack > cwhite:
-                        # else:
-                        #     foreground_high = "white"
-
-                if suffix:
-                    attr = ' '.join([name, suffix])
-                else:
-                    attr = name
-
-                # print foreground, foreground_high, background, background_high
-                entries[attr] = urwid_utils.palette.PaletteEntry(
-                    mono="white",
-                    foreground=foreground,
-                    background=background,
-                    foreground_high=foreground_high,
-                    background_high=background_high,
-                )
-
-            entries["table_message"] = urwid_utils.palette.PaletteEntry(
-                mono="white",
-                foreground="black",
-                background="white",
-                foreground_high="black",
-                background_high="white",
-            )
-
-        # raise Exception(entries)
-        return entries
-
     @property
-    def focus(self): return self._focus
+    def focus(self):
+        return self._focus
 
     def next_position(self, position):
         index = position + 1
@@ -446,30 +240,28 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             raise IndexError
         return index
 
+    @staticmethod
     def prev_position(self, position):
         index = position-1
         if index < 0:
             raise IndexError
         return index
 
+    def positions(self, reverse=False):
+        if reverse:
+            return range(len(self) - 1, -1, -1)
+        return range(len(self))
+
     def set_focus(self, position):
-        # logger.debug("walker set_focus: %d" %(position))
         self._emit("blur", self._focus)
         self._focus = position
         self._emit("focus", position)
         self._modified()
 
     def _modified(self):
-        # self.focus_position = 0
         urwid.listbox.ListWalker._modified(self)
 
-    def positions(self, reverse=False):
-        if reverse:
-            return range(len(self) - 1, -1, -1)
-        return range(len(self))
-
     def __getitem__(self, position):
-        # logger.debug("walker get: %d" %(position))
         if isinstance(position, slice):
             return [self[i] for i in range(*position.indices(len(self)))]
         if position < 0 or position >= len(self.filtered_rows):
@@ -480,19 +272,14 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         except IndexError:
             logger.error(traceback.format_exc())
             raise
-        # logger.debug("row: %s, position: %s, len: %d" %(r, position, len(self)))
 
     def __delitem__(self, position):
         if isinstance(position, slice):
             indexes = [self.position_to_index(p)
                        for p in range(*position.indices(len(self)))]
             self.delete_rows(indexes)
-            # for i in range(*position.indices(len(self))):
-            #     print(f"{position}, {i}")
-            #     del self[i]
         else:
             try:
-                # raise Exception(position)
                 i = self.position_to_index(self.filtered_rows[position])
                 self.delete_rows(i)
             except IndexError:
@@ -513,14 +300,8 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         elif attr in ["body"]:
             return getattr(self.listbox, attr)
         raise AttributeError(attr)
-        # else:
-        #     return object.__getattribute__(self, attr)
-        # elif attr == "body":
-        #     return self.walker
-        # raise AttributeError(attr)
 
     def render(self, size, focus=False):
-        # logger.info("table render")
         self._width = size[0]
         if len(size) > 1:
             self._height = size[1]
@@ -549,12 +330,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         if key == "enter" and not self.selection.details_focused:
             self._emit("select", self.selection.data)
         else:
-            # key = super().keypress(size, key)
             return key
-        # if key == "enter":
-        #     self._emit("select", self, self.selection)
-        # else:
-        #     return key
 
     def decorate(self, row, column, value):
         if column.decoration_fn:
@@ -565,7 +341,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             else:
                 value = str(value)
 
-            # value = DataTableText(value, wrap=column.wrap)
             value = urwid.Text(value)
         return value
 
@@ -599,10 +374,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 # klass = type(f"DataTableRow_{cls.__name__}", [cls],
                 klass = make_dataclass(
                     f"DataTableRow_{cls.__name__}",
-                    [
-                        ("_cls", typing.Optional[typing.Any], field(
-                            default=None)),
-                    ],
+                    [("_cls", Optional[Any], field(default=None))],
                     bases=(cls,)
                 )
                 k = klass(
@@ -616,22 +388,12 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 return cls(**d)
         else:
             return AttrDict(**d)
-        # if isinstance(d, MutableMapping):
-        #     cls = d.get("_cls")
-        # else:
-        #     cls = getattr(d, "_cls")
-
-        # if cls:
-        #     return cls(**d)
-        # else:
-        #     return AttrDict(**d)
 
     def get_row(self, index):
         row = self.data_frame.get(index, "_rendered_row")
 
         if self.data_frame.get(index, "_dirty") or row is None:
             self.refresh_calculated_fields([index])
-            # vals = self[index]
             vals = self.get_dataframe_row(index)
             row = self.render_item(index)
             if self.row_attr_fn:
@@ -666,7 +428,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                                row_height=self.row_height,
                                divider=self.divider,
                                padding=self.padding,
-                               # index=data[self.index_column_name],
                                cell_selection=self.cell_selection,
                                style=self.row_style)
         return row
@@ -773,7 +534,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         if self.with_footer:
             self.footer.set_focus_column(idx)
 
-        # logger.debug("set_focus_column: %d" %(index))
         self.data_frame["_focus_position"] = idx
         self.data_frame["_dirty"] = True
 
@@ -827,7 +587,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.reset()
 
     def toggle_columns(self, columns, show=None):
-
         if not isinstance(columns, list):
             columns = [columns]
 
@@ -876,7 +635,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             r.update()
         if self.with_footer:
             self.footer.update()
-        #     r.resize_column(index, size)
 
     def on_header_drag(self, source, source_column, start, end):
 
@@ -892,28 +650,19 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 indexes = range(index, len(cols))
             else:
                 indexes = range(index, -1, -1)
-            # if len(indexes) < 2:
-            #     raise Exception(indexes, cols, mins, index, delta, direction)
 
             deltas = [a-b for a, b in zip(cols, mins)]
-            # logger.debug(f"deltas: {deltas}")
             d = delta
 
             for n, i in enumerate(indexes):
-                # logger.debug(f"i: {i}, d: {d}")
-
                 if delta < 0:
-                    # can only shrink down to minimum for this column
-                    # logger.debug(f"{d}, {-deltas[i]}")
                     try:
                         d = max(delta, -deltas[i])
                     except:
                         raise Exception(cols, mins, deltas, list(indexes))
-                    # logger.debug(f"shrinking: {d}")
                 elif delta > 0:
                     # can only grow to maximum of remaining deltas?
                     d = min(delta, sum([deltas[x] for x in indexes[1:]]))
-                    # logger.debug(f"growing: {d}")
                 else:
                     continue
 
@@ -923,7 +672,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                     delta = -d
                     d = delta
                     indexes = list(reversed(indexes))
-                    # logger.debug(f"reversing: {d}")
                 else:
                     delta -= d
                     if delta == 0:
@@ -954,16 +702,13 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         colname = cell.column.name
         column = next(
             c for c in self.visible_data_columns if c.name == colname)
-        # index = index//2
 
-        # new_width = old_width = column.header.width
         new_width = old_width = old_widths[index]
 
         delta = end-start
 
         if isinstance(source, DataTableDividerCell):
             drag_direction = 1
-        # elif index == 0 and source_column <= int(round(column.header.width / 3)):
         elif index == 0 and source_column <= int(old_width / 3):
             return
         elif index != 0 and source_column <= int(round(old_width / 3)):
@@ -990,9 +735,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
     def resize_body_rows(self):
         for r in self:
             r.on_resize()
-
-    # def toggle_details(self):
-    #     self.selection.toggle_details()
 
     def enable_cell_selection(self):
         logger.debug("enable_cell_selection")
@@ -1111,18 +853,12 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 for f in filters
             )
         )
-        # if self.focus_position > len(self):
-        #     self.focus_position = len(self)-1
-
-        # logger.debug("filtered: %s" %(self.filtered_rows))
 
         self.filters = filters
-        # self.invalidate()
 
     def clear_filters(self):
         self.filtered_rows = list(range(len(self.data_frame)))
         self.filters = None
-        # self.invalidate()
 
     def load_all(self):
         if len(self) >= self.query_result_count():
@@ -1133,13 +869,10 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.listbox._invalidate()
 
     def load_more(self, position):
-
-        # logger.debug("load_more")
         if position is not None and position > len(self):
             return False
         self.page = len(self) // self.limit
         offset = (self.page)*self.limit
-        # logger.debug(f"offset: {offset}, row count: {self.row_count()}")
         if (self.row_count() is not None
                 and len(self) >= self.row_count()):
 
@@ -1201,14 +934,12 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             self.show_message(self.empty_message)
         else:
             self.hide_message()
-        # self.invalidate()
 
     def refresh(self, reset=False):
         logger.debug(f"refresh: {reset}")
         offset = None
         idx = None
         pos = 0
-        # limit = len(self)-1
         if reset:
             self.page = 0
             offset = 0
@@ -1221,7 +952,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 pass
             pos = self.focus_position
             limit = len(self)
-        # del self[:]
         self.requery(offset=offset, limit=limit)
         if self._initialized:
             self.pack_columns()
@@ -1233,32 +963,20 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 pass
         self.focus_position = pos
 
-        # self.focus_position = 0
-
     def reset_columns(self):
         for c in self.visible_columns:
             if c.sizing == c.initial_sizing and c.width == c.initial_width:
                 continue
-            # print(c.initial_sizing, c.initial_width)
             self.resize_column(c.name, (c.initial_sizing, c.initial_width))
-            # c.sizing = c.initial_sizing
-            # c.width = c.initial_width
 
     def reset(self, reset_sort=False):
         self.refresh(reset=True)
 
         if reset_sort and self.initial_sort is not None:
             self.sort_by_column(col=self.initial_sort.field_name, reverse=self.initial_sort.is_reverse)
-        # if self._initialized:
-        #     for r in self:
-        #         if r.details_open:
-        #             r.open_details()
         self._modified()
-        # self._invalidate()
 
     def pack_columns(self):
-
-        # logger.info("pack_columns")
         widths = self.header.column_widths((self.width,))
         logger.debug(f"{self}, {widths}")
 
@@ -1322,9 +1040,206 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.reset()
 
     def save(self, path):
-        # print(path)
         with open(path, "w") as f:
             f.write(self.data_frame.to_json())
 
+    @classmethod
+    def get_palette_entries(
+            cls,
+            user_entries={},
+            min_contrast_entries=None,
+            min_contrast=2.0,
+            default_background="black"
+    ):
 
-__all__ = ["DataTable", "DataTableColumn"]
+        foreground_map = {
+            "table_divider": ["light gray", "light gray"],
+            "table_row_body": ["light gray", "light gray"],
+            "table_row_header": ["light gray", "white"],
+            "table_row_footer": ["light gray", "white"],
+        }
+
+        background_map = {
+            None: ["black", "black"],
+            "focused": ["dark gray", "g15"],
+            "column_focused": ["black", "#660"],
+            "highlight": ["light gray", "g15"],
+            "highlight focused": ["light gray", "g23"],
+            "highlight column_focused": ["light gray", "#660"],
+        }
+
+        entries = dict()
+
+        row_attr = "table_row_body"
+        for suffix in [None, "focused", "column_focused",
+                       "highlight", "highlight focused",
+                       "highlight column_focused",
+                       ]:
+            if suffix:
+                attr = ' '.join([row_attr, suffix])
+            else:
+                attr = row_attr
+            entries[attr] = urwid_utils.palette.PaletteEntry(
+                mono="white",
+                foreground=foreground_map[row_attr][0],
+                background=background_map[suffix][0],
+                foreground_high=foreground_map[row_attr][1],
+                background_high=background_map[suffix][1],
+            )
+
+        header_foreground_map = {
+            None: ["white,bold", "white,bold"],
+            "focused": ["dark gray", "white,bold"],
+            "column_focused": ["black", "black"],
+            "highlight": ["yellow,bold", "yellow,bold"],
+            "highlight focused": ["yellow", "yellow"],
+            "highlight column_focused": ["yellow", "yellow"],
+        }
+
+        header_background_map = {
+            None: ["light gray", "g23"],
+            "focused": ["light gray", "g50"],
+            "column_focused": ["white", "g70"],  # "g23"],
+            "highlight": ["light gray", "g38"],
+            "highlight focused": ["light gray", "g50"],
+            "highlight column_focused": ["white", "g70"],
+        }
+
+        for prefix in ["table_row_header", "table_row_footer"]:
+            for suffix in [
+                None, "focused", "column_focused",
+                "highlight", "highlight focused",
+                "highlight column_focused"
+            ]:
+                if suffix:
+                    attr = ' '.join([prefix, suffix])
+                else:
+                    attr = prefix
+                entries[attr] = urwid_utils.palette.PaletteEntry(
+                    mono="white",
+                    foreground=header_foreground_map[suffix][0],
+                    background=header_background_map[suffix][0],
+                    foreground_high=header_foreground_map[suffix][1],
+                    background_high=header_background_map[suffix][1],
+                )
+
+        for name, entry in list(user_entries.items()):
+            DataTable.focus_map[name] = "%s focused" % (name)
+            DataTable.highlight_map[name] = "%s highlight" % (name)
+            DataTable.column_focus_map["%s focused" %
+                                       (name)] = "%s column_focused" % (name)
+            DataTable.highlight_focus_map["%s highlight" % (
+                name)] = "%s highlight focused" % (name)
+            for suffix in [None, "focused", "column_focused",
+                           "highlight", "highlight focused",
+                           "highlight column_focused",
+                           ]:
+
+                # Check entry backgroun colors against default bg.  If they're
+                # the same, replace the entry's background color with focus or
+                # highglight color.  If not, preserve the entry background.
+
+                default_bg_rgb = urwid.AttrSpec(
+                    default_background, default_background, 16)
+                bg_rgb = urwid.AttrSpec(entry.background, entry.background, 16)
+                background = background_map[suffix][0]
+                if default_bg_rgb.get_rgb_values() != bg_rgb.get_rgb_values():
+                    background = entry.background
+
+                background_high = background_map[suffix][1]
+                if entry.background_high:
+                    bg_high_rgb = urwid.AttrSpec(
+                        entry.background_high,
+                        entry.background_high,
+                        (1 << 24
+                         if urwid_utils.palette.URWID_HAS_TRUE_COLOR
+                         else 256
+                         )
+                    )
+                    if default_bg_rgb.get_rgb_values() != bg_high_rgb.get_rgb_values():
+                        background_high = entry.background_high
+
+                foreground = entry.foreground
+                background = background
+                foreground_high = entry.foreground_high if entry.foreground_high else entry.foreground
+                if min_contrast_entries and name in min_contrast_entries:
+                    # All of this code is available in the colourettu package
+                    # (https://github.com/MinchinWeb/colourettu) but newer
+                    # versions don't run Python 3, and older versions don't work
+                    # right.
+                    def normalized_rgb(r, g, b):
+
+                        r1 = r / 255
+                        g1 = g / 255
+                        b1 = b / 255
+
+                        if r1 <= 0.03928:
+                            r2 = r1 / 12.92
+                        else:
+                            r2 = math.pow(((r1 + 0.055) / 1.055), 2.4)
+                        if g1 <= 0.03928:
+                            g2 = g1 / 12.92
+                        else:
+                            g2 = math.pow(((g1 + 0.055) / 1.055), 2.4)
+                        if b1 <= 0.03928:
+                            b2 = b1 / 12.92
+                        else:
+                            b2 = math.pow(((b1 + 0.055) / 1.055), 2.4)
+
+                        return (r2, g2, b2)
+
+                    def luminance(r, g, b):
+
+                        return math.sqrt(
+                            0.299 * math.pow(r, 2) +
+                            0.587 * math.pow(g, 2) +
+                            0.114 * math.pow(b, 2)
+                        )
+
+                    def contrast(c1, c2):
+
+                        n1 = normalized_rgb(*c1)
+                        n2 = normalized_rgb(*c2)
+                        lum1 = luminance(*n1)
+                        lum2 = luminance(*n2)
+                        minlum = min(lum1, lum2)
+                        maxlum = max(lum1, lum2)
+                        return (maxlum + 0.05) / (minlum + 0.05)
+
+                    table_bg = background_map[suffix][1]
+                    attrspec_bg = urwid.AttrSpec(table_bg, table_bg, 256)
+                    color_bg = attrspec_bg.get_rgb_values()[3:6]
+                    attrspec_fg = urwid.AttrSpec(
+                        foreground_high,
+                        foreground_high,
+                        256
+                    )
+                    color_fg = attrspec_fg.get_rgb_values()[0:3]
+                    cfg = contrast(color_bg, color_fg)
+                    cblack = contrast((0, 0, 0), color_fg)
+                    if cfg < min_contrast and cfg < cblack:
+                        foreground_high = "black"
+
+                if suffix:
+                    attr = ' '.join([name, suffix])
+                else:
+                    attr = name
+
+                # print foreground, foreground_high, background, background_high
+                entries[attr] = urwid_utils.palette.PaletteEntry(
+                    mono="white",
+                    foreground=foreground,
+                    background=background,
+                    foreground_high=foreground_high,
+                    background_high=background_high,
+                )
+
+            entries["table_message"] = urwid_utils.palette.PaletteEntry(
+                mono="white",
+                foreground="black",
+                background="white",
+                foreground_high="black",
+                background_high="white",
+            )
+
+        return entries
