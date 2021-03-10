@@ -241,7 +241,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         return index
 
     @staticmethod
-    def prev_position(self, position):
+    def prev_position(position):
         index = position-1
         if index < 0:
             raise IndexError
