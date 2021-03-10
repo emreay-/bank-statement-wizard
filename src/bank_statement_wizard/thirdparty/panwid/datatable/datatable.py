@@ -54,12 +54,13 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                  with_footer: bool = False,
                  with_scrollbar: bool = False,
                  empty_message: str = "(no data)",
-                 row_height=None,
-                 cell_selection=False,
+                 row_height = None,
+                 cell_selection: bool = False,
                  sort_by: Optional[SortInfo] = None,
-                 query_sort=False,
-                 sort_icons=True,
-                 no_load_on_init=None,
+                 query_sort: bool = False,
+                 sort_icons: bool = True,
+                 sort_refocus: bool = False,
+                 no_load_on_init: bool = None,
                  divider=DEFAULT_TABLE_DIVIDER,
                  padding=DEFAULT_CELL_PADDING,
                  row_style=None,
@@ -88,11 +89,12 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.row_height = row_height
         self.cell_selection = cell_selection
 
-        self.initial_sort: SortInfo = SortInfo(field_name=self.index_column_name, is_reverse=False)
         self.sort_by: SortInfo = sort_by
+        self.initial_sort: SortInfo = self.sort_by
 
         self.query_sort = query_sort
         self.sort_icons = sort_icons
+        self.sort_refocus = sort_refocus
         self.no_load_on_init = no_load_on_init
 
         if isinstance(divider, str):
@@ -686,7 +688,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             raise IndexError
 
     def sort_by_column(self, col=None, reverse=None, toggle=False):
-        logger.debug(f"Called {self.__class__.__name__}.sort_by_column")
+        logger.debug(f"col={col}, reverse={reverse}, toggle={toggle}")
         column_name = None
         column_number = None
 
@@ -709,17 +711,20 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.sort_column = column_number
 
         if not column_name:
+            logger.debug(f"Cannot retrieve a column name for column {col}")
             return
         try:
             column = self.get_column_with_name(column_name)
-        except:
+        except Exception as e:
+            logger.exception(f"Implicitly ignored exception while getting column index: {e}")
             return  # FIXME
 
         if reverse is None and column.sort_reverse is not None:
             reverse = column.sort_reverse
 
-        if toggle and column_name == self.sort_by.field_name:
+        if toggle and self.sort_by and column_name == self.sort_by.field_name:
             reverse = not self.sort_by.is_reverse
+
         self.sort_by = SortInfo(field_name=column_name, is_reverse=reverse)
 
         logger.debug(f"sort_by: {column_name}, ({self.sort_column}), {reverse}")
@@ -727,9 +732,11 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             self.reset()
 
         row_index: Optional[RowIndex] = None
+
         if self.sort_refocus:
             row_index = self[self._focus].data.get(self.index_column_name, None)
             logger.debug(f"row_index: {row_index}")
+
         self.sort(column_name, key=column.sort_key)
 
         if self.with_header:
@@ -787,7 +794,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self._modified()
 
     def add_columns(self, columns, data=None):
-
         if not isinstance(columns, list):
             columns = [columns]
             if data:
@@ -800,7 +806,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.invalidate()
 
     def remove_columns(self, columns):
-
         if not isinstance(columns, list):
             columns = [columns]
 
