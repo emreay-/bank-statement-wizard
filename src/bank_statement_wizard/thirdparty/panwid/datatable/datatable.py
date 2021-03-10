@@ -129,8 +129,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.filtered_rows = list()
 
         if self.divider:
-            self._columns = list(intersperse_divider(
-                self._columns, self.divider))
+            self._columns = list(intersperse_divider(self._columns, self.divider))
 
         for c in self._columns:
             c.table = self
@@ -141,13 +140,38 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             index_name=self.index_column_name or None
         )
 
+        self.header = DataTableHeaderRow(
+            self,
+            padding=self.padding,
+            style=self.row_style,
+            row_height=1  # FIXME
+        )
+
+        self.footer = DataTableFooterRow(
+            self,
+            padding=self.padding,
+            style=self.row_style,
+            row_height=1
+        )
+
         self.pile = urwid.Pile([])
         self.listbox = ScrollingListBox(
             self, infinite=self.limit,
             with_scrollbar=self.with_scrollbar,
             row_count_fn=self.row_count
         )
+        self.listbox_placeholder = urwid.WidgetPlaceholder(self.listbox)
 
+        self._make_signal_connections()
+        self._update_pile_contents()
+
+        self.attr = urwid.AttrMap(
+            self.pile,
+            attr_map=self.attr_map,
+        )
+        super(DataTable, self).__init__(self.attr)
+
+    def _make_signal_connections(self):
         urwid.connect_signal(
             self.listbox, "drag_start",
             lambda source, drag_from: urwid.signals.emit_signal(
@@ -167,13 +191,17 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         if self.limit:
             urwid.connect_signal(self.listbox, "load_more", self.load_more)
 
-        self.header = DataTableHeaderRow(
-            self,
-            padding=self.padding,
-            style=self.row_style,
-            row_height=1  # FIXME
-        )
+        if self.with_header:
+            if self.ui_sort:
+                urwid.connect_signal(
+                    self.header, "column_click",
+                    lambda index: self.sort_by_column(index, toggle=True)
+                )
 
+            if self.ui_resize:
+                urwid.connect_signal(self.header, "drag", self.on_header_drag)
+
+    def _update_pile_contents(self):
         if self.with_header:
             self.pile.contents.insert(
                 0,
@@ -186,38 +214,13 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
                 )
             )
 
-            if self.ui_sort:
-                urwid.connect_signal(
-                    self.header, "column_click",
-                    lambda index: self.sort_by_column(index, toggle=True)
-                )
-
-            if self.ui_resize:
-                urwid.connect_signal(self.header, "drag", self.on_header_drag)
-
-        self.listbox_placeholder = urwid.WidgetPlaceholder(self.listbox)
-        self.pile.contents.append(
-            (self.listbox_placeholder, self.pile.options('weight', 1))
-        )
-        self.pile.focus_position = len(self.pile.contents)-1
-
-        self.footer = DataTableFooterRow(
-            self,
-            padding=self.padding,
-            style=self.row_style,
-            row_height=1
-        )
+        self.pile.contents.append((self.listbox_placeholder, self.pile.options('weight', 1)))
+        self.pile.focus_position = len(self.pile.contents) - 1
 
         if self.with_footer:
             self.pile.contents.append(
                 (self.footer, self.pile.options('pack'))
             )
-
-        self.attr = urwid.AttrMap(
-            self.pile,
-            attr_map=self.attr_map,
-        )
-        super(DataTable, self).__init__(self.attr)
 
     def query(self, sort=None, offset=None):
         raise Exception("query method must be overriden")
