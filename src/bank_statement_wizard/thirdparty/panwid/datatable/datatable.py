@@ -158,7 +158,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         self.pile = urwid.Pile([])
         self.listbox = ScrollingListBox(
-            self, infinite=self.limit,
+            self, infinite=not self.limit,
             with_scrollbar=self.with_scrollbar,
             row_count_fn=self.row_count
         )
@@ -225,10 +225,10 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
             )
 
     def query(self, sort=None, offset=None):
-        raise Exception("query method must be overriden")
+        raise NotImplementedError("query method must be implemented by the child classes")
 
-    def query_result_count(self):
-        raise Exception("query_result_count method must be defined")
+    def query_result_count(self) -> Optional[int]:
+        raise Exception("query_result_count method must be implemented by the child classes")
 
     @property
     def focus(self):
@@ -779,7 +779,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         self.apply_filters()
 
     def delete_rows(self, indexes):
-
         self.data_frame.delete_rows(indexes)
         self.apply_filters()
         if self.focus_position > 0 and self.focus_position >= len(self)-1:
@@ -804,7 +803,6 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         # FIXME: update header / footer if dynamic
 
     def swap_rows_by_field(self, p0, p1, field=None):
-
         if not field:
             field = self.index_column_name
 
@@ -828,18 +826,13 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
     def swap_rows(self, p0, p1, field=None):
         self.swap_rows_by_field(p0, p1, field=field)
 
-    def row_count(self):
-
-        if not self.limit:
-            return None
-
+    def row_count(self) -> Optional[int]:
         if self.limit:
             return self.query_result_count()
         else:
-            return len(self)
+            return None
 
-    def apply_filters(self, filters=None):
-
+    def apply_filters(self, filters: Optional[List[Callable]] = None):
         if not filters:
             filters = self.filters
         elif not isinstance(filters, list):
