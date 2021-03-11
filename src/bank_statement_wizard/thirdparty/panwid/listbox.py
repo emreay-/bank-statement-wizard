@@ -22,62 +22,42 @@ class ListBoxScrollBar(urwid.WidgetWrap):
         width, height = size
         scroll_marker_height = 1
         del self.pile.contents[:]
-        if (len(self.parent.body)
-            and self.parent.row_count
-            and self.parent.focus is not None
-                and self.parent.row_count > height):
-            scroll_position = int(
-                self.parent.focus_position / self.parent.row_count * height
-            )
-            scroll_marker_height = max(
-                height * (height / self.parent.row_count), 1)
+
+        if (len(self.parent.body) and self.parent.row_count and
+                self.parent.focus is not None and self.parent.row_count > height):
+            scroll_position = int(self.parent.focus_position / self.parent.row_count * height)
+            scroll_marker_height = max(height * (height / self.parent.row_count), 1)
         else:
             scroll_position = -1
 
-        pos_marker = urwid.AttrMap(urwid.Text(" "),
-                                   {None: "scroll_pos"}
-                                   )
-
-        down_marker = urwid.AttrMap(urwid.Text(u"\N{DOWNWARDS ARROW}"),
-                                    {None: "scroll_marker"}
-                                    )
-
-        begin_marker = urwid.AttrMap(urwid.Text(u"\N{CIRCLED MINUS}"),
-                                     {None: "scroll_marker"}
-                                     )
-
-        end_marker = urwid.AttrMap(urwid.Text(u"\N{CIRCLED PLUS}"),
-                                   {None: "scroll_marker"}
-                                   )
-
-        view_marker = urwid.AttrMap(urwid.Text(" "),
-                                    {None: "scroll_view"}
-                                    )
-
-        bg_marker = urwid.AttrMap(urwid.Text(" "),
-                                  {None: "scroll_bg"}
-                                  )
+        pos_marker = urwid.AttrMap(urwid.Text(" "), {None: "scroll_pos"})
+        down_marker = urwid.AttrMap(urwid.Text(u"\N{DOWNWARDS ARROW}"), {None: "scroll_marker"})
+        begin_marker = urwid.AttrMap(urwid.Text(u"\N{CIRCLED MINUS}"), {None: "scroll_marker"})
+        end_marker = urwid.AttrMap(urwid.Text(u"\N{CIRCLED PLUS}"), {None: "scroll_marker"})
+        view_marker = urwid.AttrMap(urwid.Text(" "), {None: "scroll_view"})
+        bg_marker = urwid.AttrMap(urwid.Text(" "), {None: "scroll_bg"})
 
         for i in range(height):
-            if abs(i - scroll_position) <= scroll_marker_height//2:
+            if abs(i - scroll_position) <= scroll_marker_height // 2:
                 if i == 0 and self.parent.focus_position == 0:
                     marker = begin_marker
-                elif i+1 == height and self.parent.row_count == self.parent.focus_position+1:
+                elif i + 1 == height and self.parent.row_count == self.parent.focus_position+1:
                     marker = end_marker
-                elif len(self.parent.body) == self.parent.focus_position+1 and i == scroll_position + scroll_marker_height//2:
+                elif len(self.parent.body) == self.parent.focus_position + 1 \
+                        and i == scroll_position + scroll_marker_height // 2:
                     marker = down_marker
                 else:
                     marker = pos_marker
             else:
                 if i < scroll_position:
                     marker = view_marker
-                elif self.parent.row_count and i/height < (len(self.parent.body) / self.parent.row_count):
+                elif self.parent.row_count and i / height < (len(self.parent.body) / self.parent.row_count):
                     marker = view_marker
                 else:
                     marker = bg_marker
-            self.pile.contents.append(
-                (urwid.Filler(marker), self.pile.options("weight", 1))
-            )
+
+            self.pile.contents.append((urwid.Filler(marker), self.pile.options("weight", 1)))
+
         self._invalidate()
 
     def selectable(self):
@@ -177,7 +157,7 @@ class ScrollingListBox(urwid.WidgetWrap):
                 and self.infinite
                 and (
                     not len(self.body)
-                    or self.focus_position == len(self.body)-1)
+                    or self.focus_position == len(self.body) - 1)
         ):
             self.load_more = True
             self.queued_keypress = key
