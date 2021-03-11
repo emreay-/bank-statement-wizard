@@ -33,10 +33,7 @@ def intersperse_divider(columns, divider):
 
 
 class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
-
-    signals = ["select", "refresh", "focus", "blur",
-               # "focus", "unfocus", "row_focus", "row_unfocus",
-               "drag_start", "drag_continue", "drag_stop"]
+    signals = ["select", "refresh", "focus", "blur", "drag_start", "drag_continue", "drag_stop"]
 
     ATTR = "table"
 
@@ -176,8 +173,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
     def _make_signal_connections(self):
         urwid.connect_signal(
             self.listbox, "drag_start",
-            lambda source, drag_from: urwid.signals.emit_signal(
-                self, "drag_start", self, drag_from)
+            lambda source, drag_from: urwid.signals.emit_signal(self, "drag_start", self, drag_from)
         )
         urwid.connect_signal(
             self.listbox, "drag_continue",
@@ -186,8 +182,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
         )
         urwid.connect_signal(
             self.listbox, "drag_stop",
-            lambda source, drag_from, drag_to: urwid.signals.emit_signal(
-                self, "drag_stop", self, drag_from, drag_to)
+            lambda source, drag_from, drag_to: urwid.signals.emit_signal(self, "drag_stop", self, drag_from, drag_to)
         )
 
         if self.limit:
@@ -195,10 +190,7 @@ class DataTable(urwid.WidgetWrap, urwid.listbox.ListWalker):
 
         if self.with_header:
             if self.ui_sort:
-                urwid.connect_signal(
-                    self.header, "column_click",
-                    lambda index: self.sort_by_column(index, toggle=True)
-                )
+                urwid.connect_signal(self.header, "column_click", lambda index: self.sort_by_column(index, toggle=True))
 
             if self.ui_resize:
                 urwid.connect_signal(self.header, "drag", self.on_header_drag)

@@ -1,30 +1,23 @@
 import collections
 import raccoon as rc
+from typing import Dict, Optional, List, Any
 
 from ..logger import get_logger
 
 logger = get_logger()
 
+ColumnName = str
+
 
 class DataTableDataFrame(rc.DataFrame):
+    DEFAULT_COLUMNS = ["_dirty", "_focus_position", "_value_fn", "_cls", "_details", "_rendered_row"]
 
-    DATA_TABLE_COLUMNS = ["_dirty", "_focus_position",
-                          "_value_fn", "_cls", "_details", "_rendered_row"]
-
-    def __init__(self, data=None, columns=None, index=None, index_name="index", sort=None):
-
-        if columns and not index_name in columns:
+    def __init__(self, data: Optional[Dict[ColumnName, List]] = None, columns: Optional[List[ColumnName]] = None,
+                 index: Optional[List[Any]] = None, index_name: ColumnName = "index", sort: bool = None):
+        if columns and index_name not in columns:
             columns.insert(0, index_name)
-        columns += self.DATA_TABLE_COLUMNS
-        super(DataTableDataFrame, self).__init__(
-            data=data,
-            columns=columns,
-            index=index,
-            index_name=index_name,
-            sort=sort
-        )
-        # for c in self.DATA_TABLE_COLUMNS:
-        #     self[c] = None
+        columns += self.DEFAULT_COLUMNS
+        super().__init__(data=data, columns=columns, index=index, index_name=index_name, sort=sort)
 
     def _validate_index(self, indexes):
         try:
@@ -56,7 +49,7 @@ class DataTableDataFrame(rc.DataFrame):
             c for c in self.columns
             if c not in data_columns
             and c != self.index_name
-            and c not in self.DATA_TABLE_COLUMNS
+            and c not in self.DEFAULT_COLUMNS
         ]
         data_columns += ["_cls", "_details"]
 
@@ -67,19 +60,14 @@ class DataTableDataFrame(rc.DataFrame):
                              "open": False, "disabled": False})
                          if isinstance(d, collections.abc.MutableMapping)
                          else getattr(d, k, None if k != "_details" else {"open": False, "disabled": False})
-                         # for k in data_columns + self.DATA_TABLE_COLUMNS] for d in rows])]
+                         # for k in data_columns + self.DEFAULT_COLUMNS] for d in rows])]
                          for k in data_columns] for d in rows])]
                      ))
         )
         return data
 
     def update_rows(self, rows, limit=None):
-
         data = self.transpose_data(rows)
-        # data["_details"] = [{"open": False, "disabled": False}] * len(rows)
-        # if not "_details" in data:
-        #     data["_details"] = [{"open": False, "disabled": False}] * len(rows)
-
         if not limit:
             if len(rows):
                 indexes = [x for x in self.index if x not in data.get(
@@ -88,8 +76,6 @@ class DataTableDataFrame(rc.DataFrame):
                     self.delete_rows(indexes)
             else:
                 self.delete_all_rows()
-
-            # logger.info(f"update_rowGs: {self.index}, {data[self.index_name]}")
 
         if not len(rows):
             return []
@@ -110,15 +96,12 @@ class DataTableDataFrame(rc.DataFrame):
         return data.get(self.index_name, [])
 
     def append_rows(self, rows):
-
         length = len(rows)
         if not length:
             return
 
-        colnames = list(
-            self.columns) + [c for c in self.DATA_TABLE_COLUMNS if c not in self.columns]
+        colnames = list(self.columns) + [c for c in self.DEFAULT_COLUMNS if c not in self.columns]
 
-        # data_columns = list(set().union(*(list(d.keys()) for d in rows)))
         data = self.transpose_data(rows)
         colnames += [c for c in data.keys() if c not in colnames]
 
@@ -142,17 +125,10 @@ class DataTableDataFrame(rc.DataFrame):
             newdata = DataTableDataFrame(**kwargs)
         except ValueError:
             raise Exception(kwargs)
-        # newdata.log_dump()
-        # self.log_dump(10, label="before")
         try:
             self.append(newdata)
         except ValueError:
             raise Exception(f"{self.index}, {newdata}")
-        # self.log_dump(10, label="after")
-
-    # def add_column(self, column, data=None):
-    #     self[column] = data
 
     def clear(self):
         self.delete_all_rows()
-        # self.delete_rows(self.index)
